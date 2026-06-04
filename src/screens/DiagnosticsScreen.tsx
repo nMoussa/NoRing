@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   getAndroidRoleStatus,
   getIOSExtensionStatus,
@@ -19,14 +19,14 @@ import {
   type ExtensionStatus,
   type RoleStatus,
 } from '../services/nativeBridge';
-import {loadPlatformStatus, loadRules} from '../services/storage';
-import {useTranslation} from '../i18n/useTranslation';
+import { loadPlatformStatus, loadRules } from '../services/storage';
+import { useTranslation } from '../i18n/useTranslation';
+import { extractBlockedE164Numbers } from '../services/ruleEngine';
+import { formatTimestamp, statusCheckLabel } from '../utils/formatters';
 
-function Row({label, value}: {label: string; value: string}) {
+function Row({ label, value }: { label: string; value: string }) {
   return (
-    <View
-      style={styles.row}
-      accessibilityLabel={`${label}: ${value}`}>
+    <View style={styles.row} accessibilityLabel={`${label}: ${value}`}>
       <Text style={styles.rowLabel}>{label}</Text>
       <Text style={styles.rowValue}>{value}</Text>
     </View>
@@ -58,11 +58,7 @@ export default function DiagnosticsScreen() {
       setLastReload(ps.iosLastReloadTime);
       setReloadError(ps.iosLastReloadError);
     }
-    // Count exact blocked rules synced to extension
-    const rules = loadRules();
-    const count = rules.filter(
-      r => r.enabled && r.matchType === 'exact' && r.action !== 'allow',
-    ).length;
+    const count = extractBlockedE164Numbers(loadRules()).length;
     setEntryCount(count);
   }, []);
 
@@ -76,11 +72,7 @@ export default function DiagnosticsScreen() {
     setReloading(true);
     setReloadError(null);
     try {
-      const rules = loadRules();
-      const numbers = rules
-        .filter(r => r.enabled && r.matchType === 'exact' && r.action !== 'allow')
-        .map(r => r.patternNormalized);
-      await syncIOSNumbers(numbers);
+      await syncIOSNumbers(extractBlockedE164Numbers(loadRules()));
       await refresh();
     } catch (e: any) {
       setReloadError(e?.message ?? s.common.error);
@@ -89,21 +81,20 @@ export default function DiagnosticsScreen() {
     }
   };
 
-  const formatTs = (ts: number | null | string): string => {
-    if (ts == null) return s.diagnostics.never;
-    const ms = typeof ts === 'string' ? parseFloat(ts) * 1000 : ts;
-    return new Date(ms).toLocaleString();
-  };
+  const ts = (v: number | null | string) =>
+    formatTimestamp(v, s.diagnostics.never);
 
-  const roleLabel =
-    androidRole === 'granted'
-      ? `✓ ${s.common.granted}`
-      : `✗ ${androidRole}`;
+  const roleLabel = statusCheckLabel(
+    androidRole === 'granted',
+    s.common.granted,
+    androidRole,
+  );
 
-  const extLabel =
-    iosStatus === 'enabled'
-      ? `✓ ${s.common.enabled_status}`
-      : `✗ ${iosStatus}`;
+  const extLabel = statusCheckLabel(
+    iosStatus === 'enabled',
+    s.common.enabled_status,
+    iosStatus,
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -115,10 +106,7 @@ export default function DiagnosticsScreen() {
             </Text>
             <View style={styles.card}>
               <Row label={s.diagnostics.roleStatus} value={roleLabel} />
-              <Row
-                label={s.diagnostics.lastBlocked}
-                value={formatTs(lastBlocked)}
-              />
+              <Row label={s.diagnostics.lastBlocked} value={ts(lastBlocked)} />
               <Row
                 label={s.diagnostics.extensionEntryCount}
                 value={String(entryCount)}
@@ -132,10 +120,7 @@ export default function DiagnosticsScreen() {
             </Text>
             <View style={styles.card}>
               <Row label={s.diagnostics.extensionStatus} value={extLabel} />
-              <Row
-                label={s.diagnostics.lastReload}
-                value={lastReload ? formatTs(lastReload) : s.diagnostics.never}
-              />
+              <Row label={s.diagnostics.lastReload} value={ts(lastReload)} />
               <Row
                 label={s.diagnostics.extensionEntryCount}
                 value={String(entryCount)}
@@ -150,7 +135,8 @@ export default function DiagnosticsScreen() {
                 style={styles.settingsBtn}
                 onPress={() => openIOSSettings()}
                 accessibilityLabel={s.diagnostics.openSettings}
-                accessibilityRole="button">
+                accessibilityRole="button"
+              >
                 <Text style={styles.settingsBtnText}>
                   {s.diagnostics.openSettings}
                 </Text>
@@ -163,7 +149,8 @@ export default function DiagnosticsScreen() {
               disabled={reloading}
               accessibilityLabel={s.diagnostics.forceReload}
               accessibilityRole="button"
-              accessibilityState={{disabled: reloading}}>
+              accessibilityState={{ disabled: reloading }}
+            >
               {reloading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
@@ -180,9 +167,9 @@ export default function DiagnosticsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {flex: 1, backgroundColor: '#F2F2F7'},
-  content: {padding: 20},
-  section: {marginBottom: 24},
+  safe: { flex: 1, backgroundColor: '#F2F2F7' },
+  content: { padding: 20 },
+  section: { marginBottom: 24 },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
@@ -191,7 +178,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 10,
   },
-  card: {backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden'},
+  card: { backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden' },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -200,7 +187,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#E5E5EA',
   },
-  rowLabel: {fontSize: 14, color: '#555', flex: 1},
+  rowLabel: { fontSize: 14, color: '#555', flex: 1 },
   rowValue: {
     fontSize: 14,
     color: '#000',
@@ -217,7 +204,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#007AFF',
   },
-  settingsBtnText: {color: '#007AFF', fontSize: 15, fontWeight: '600'},
+  settingsBtnText: { color: '#007AFF', fontSize: 15, fontWeight: '600' },
   reloadBtn: {
     backgroundColor: '#007AFF',
     borderRadius: 12,
@@ -225,6 +212,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
   },
-  reloadBtnText: {color: '#fff', fontSize: 15, fontWeight: '600'},
-  btnDisabled: {opacity: 0.5},
+  reloadBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  btnDisabled: { opacity: 0.5 },
 });

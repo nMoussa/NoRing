@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -11,20 +11,26 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import type {StackScreenProps} from '@react-navigation/stack';
-import type {RootStackParamList} from '../navigation/RootNavigator';
-import {useRulesStore} from '../store/rulesStore';
-import type {MatchType, RuleAction} from '../types/Rule';
+import type { StackScreenProps } from '@react-navigation/stack';
+import type { RootStackParamList } from '../navigation/RootNavigator';
+import { useRulesStore } from '../store/rulesStore';
+import type { MatchType, RuleAction } from '../types/Rule';
 import NumberPreview from '../components/NumberPreview';
 import ActionBadge from '../components/ActionBadge';
-import {useTranslation} from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/useTranslation';
+import {
+  PRIORITY_DEFAULT,
+  PRIORITY_MIN,
+  PRIORITY_MAX,
+  PRIORITY_STEP,
+} from '../constants/ruleConstraints';
 
 type Props = StackScreenProps<RootStackParamList, 'RuleEditor'>;
 
-export default function RuleEditorScreen({route, navigation}: Props) {
+export default function RuleEditorScreen({ route, navigation }: Props) {
   const s = useTranslation();
-  const {ruleId} = route.params ?? {};
-  const {rules, addRule, updateRule, deleteRule} = useRulesStore();
+  const { ruleId } = route.params ?? {};
+  const { rules, addRule, updateRule, deleteRule } = useRulesStore();
   const existing = ruleId ? rules.find(r => r.id === ruleId) : undefined;
 
   const [pattern, setPattern] = useState(existing?.patternRaw ?? '');
@@ -34,13 +40,15 @@ export default function RuleEditorScreen({route, navigation}: Props) {
   const [action, setAction] = useState<RuleAction>(
     existing?.action ?? 'block_voicemail',
   );
-  const [priority, setPriority] = useState(existing?.priority ?? 100);
+  const [priority, setPriority] = useState(
+    existing?.priority ?? PRIORITY_DEFAULT,
+  );
 
-  const actions: {value: RuleAction; label: string}[] = [
-    {value: 'block_voicemail', label: s.ruleEditor.actionBlockVoicemail},
-    {value: 'reject',          label: s.ruleEditor.actionReject},
-    {value: 'silent',          label: s.ruleEditor.actionSilent},
-    {value: 'allow',           label: s.ruleEditor.actionAllow},
+  const actions: { value: RuleAction; label: string }[] = [
+    { value: 'block_voicemail', label: s.ruleEditor.actionBlockVoicemail },
+    { value: 'reject', label: s.ruleEditor.actionReject },
+    { value: 'silent', label: s.ruleEditor.actionSilent },
+    { value: 'allow', label: s.ruleEditor.actionAllow },
   ];
 
   const showIosWarning = Platform.OS === 'ios' && matchType === 'prefix';
@@ -51,7 +59,12 @@ export default function RuleEditorScreen({route, navigation}: Props) {
       return;
     }
     if (existing) {
-      updateRule(existing.id, {patternRaw: pattern, matchType, action, priority});
+      updateRule(existing.id, {
+        patternRaw: pattern,
+        matchType,
+        action,
+        priority,
+      });
       navigation.goBack();
     } else {
       const result = addRule({
@@ -76,7 +89,7 @@ export default function RuleEditorScreen({route, navigation}: Props) {
       s.ruleEditor.deleteConfirmTitle,
       s.ruleEditor.deleteConfirmMessage,
       [
-        {text: s.ruleEditor.cancel, style: 'cancel'},
+        { text: s.ruleEditor.cancel, style: 'cancel' },
         {
           text: s.ruleEditor.delete,
           style: 'destructive',
@@ -93,14 +106,15 @@ export default function RuleEditorScreen({route, navigation}: Props) {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView contentContainerStyle={styles.content}>
-
           {/* Country — locked */}
           <Text style={styles.sectionLabel}>{s.ruleEditor.country}</Text>
           <View
             style={styles.lockedField}
-            accessibilityLabel={`${s.ruleEditor.country}: France`}>
+            accessibilityLabel={`${s.ruleEditor.country}: France`}
+          >
             <Text style={styles.lockedText}>🇫🇷 France</Text>
           </View>
 
@@ -123,9 +137,7 @@ export default function RuleEditorScreen({route, navigation}: Props) {
           <Text style={[styles.sectionLabel, styles.mt]}>
             {s.ruleEditor.matchType}
           </Text>
-          <View
-            style={styles.segmented}
-            accessibilityRole="tablist">
+          <View style={styles.segmented} accessibilityRole="tablist">
             {(['prefix', 'exact'] as MatchType[]).map(t => (
               <TouchableOpacity
                 key={t}
@@ -140,12 +152,14 @@ export default function RuleEditorScreen({route, navigation}: Props) {
                     : s.ruleEditor.matchExact
                 }
                 accessibilityRole="tab"
-                accessibilityState={{selected: matchType === t}}>
+                accessibilityState={{ selected: matchType === t }}
+              >
                 <Text
                   style={[
                     styles.segmentText,
                     matchType === t && styles.segmentTextActive,
-                  ]}>
+                  ]}
+                >
                   {t === 'prefix'
                     ? s.ruleEditor.matchPrefix
                     : s.ruleEditor.matchExact}
@@ -155,9 +169,7 @@ export default function RuleEditorScreen({route, navigation}: Props) {
           </View>
 
           {showIosWarning && (
-            <View
-              style={styles.iosWarningBox}
-              accessibilityLiveRegion="polite">
+            <View style={styles.iosWarningBox} accessibilityLiveRegion="polite">
               <Text style={styles.iosWarningText}>
                 ⚠ {s.ruleEditor.iosPrefixWarning}
               </Text>
@@ -178,7 +190,8 @@ export default function RuleEditorScreen({route, navigation}: Props) {
               onPress={() => setAction(a.value)}
               accessibilityLabel={a.label}
               accessibilityRole="radio"
-              accessibilityState={{selected: action === a.value}}>
+              accessibilityState={{ selected: action === a.value }}
+            >
               <Text style={styles.actionLabel}>{a.label}</Text>
               {action === a.value && <ActionBadge action={a.value} />}
             </TouchableOpacity>
@@ -191,21 +204,28 @@ export default function RuleEditorScreen({route, navigation}: Props) {
           <View style={styles.priorityRow}>
             <TouchableOpacity
               style={styles.priorityBtn}
-              onPress={() => setPriority(p => Math.max(1, p - 10))}
-              accessibilityLabel="Decrease priority"
-              accessibilityRole="button">
+              onPress={() =>
+                setPriority(p => Math.max(PRIORITY_MIN, p - PRIORITY_STEP))
+              }
+              accessibilityLabel={s.a11y.decreasePriority}
+              accessibilityRole="button"
+            >
               <Text style={styles.priorityBtnText}>−</Text>
             </TouchableOpacity>
             <Text
               style={styles.priorityValue}
-              accessibilityLabel={`Priority: ${priority}`}>
+              accessibilityLabel={`Priority: ${priority}`}
+            >
               {priority}
             </Text>
             <TouchableOpacity
               style={styles.priorityBtn}
-              onPress={() => setPriority(p => Math.min(999, p + 10))}
-              accessibilityLabel="Increase priority"
-              accessibilityRole="button">
+              onPress={() =>
+                setPriority(p => Math.min(PRIORITY_MAX, p + PRIORITY_STEP))
+              }
+              accessibilityLabel={s.a11y.increasePriority}
+              accessibilityRole="button"
+            >
               <Text style={styles.priorityBtnText}>+</Text>
             </TouchableOpacity>
           </View>
@@ -216,7 +236,8 @@ export default function RuleEditorScreen({route, navigation}: Props) {
             style={styles.saveBtn}
             onPress={handleSave}
             accessibilityLabel={s.ruleEditor.save}
-            accessibilityRole="button">
+            accessibilityRole="button"
+          >
             <Text style={styles.saveBtnText}>{s.ruleEditor.save}</Text>
           </TouchableOpacity>
 
@@ -225,7 +246,8 @@ export default function RuleEditorScreen({route, navigation}: Props) {
               style={styles.deleteBtn}
               onPress={handleDelete}
               accessibilityLabel={s.ruleEditor.delete}
-              accessibilityRole="button">
+              accessibilityRole="button"
+            >
               <Text style={styles.deleteBtnText}>{s.ruleEditor.delete}</Text>
             </TouchableOpacity>
           )}
@@ -236,9 +258,9 @@ export default function RuleEditorScreen({route, navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: {flex: 1, backgroundColor: '#F2F2F7'},
-  flex: {flex: 1},
-  content: {padding: 20, paddingBottom: 60},
+  safe: { flex: 1, backgroundColor: '#F2F2F7' },
+  flex: { flex: 1 },
+  content: { padding: 20, paddingBottom: 60 },
   sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
@@ -248,7 +270,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 4,
   },
-  mt: {marginTop: 20},
+  mt: { marginTop: 20 },
   lockedField: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -256,7 +278,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#C6C6C8',
   },
-  lockedText: {fontSize: 16, color: '#000'},
+  lockedText: { fontSize: 16, color: '#000' },
   input: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -277,9 +299,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  segmentActive: {backgroundColor: '#fff'},
-  segmentText: {fontSize: 14, color: '#6C6C70'},
-  segmentTextActive: {color: '#000', fontWeight: '600'},
+  segmentActive: { backgroundColor: '#fff' },
+  segmentText: { fontSize: 14, color: '#6C6C70' },
+  segmentTextActive: { color: '#000', fontWeight: '600' },
   iosWarningBox: {
     backgroundColor: '#FFF3E0',
     borderRadius: 10,
@@ -288,7 +310,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#FF9500',
   },
-  iosWarningText: {fontSize: 13, color: '#8A5000'},
+  iosWarningText: { fontSize: 13, color: '#8A5000' },
   actionRow: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -300,8 +322,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  actionRowActive: {borderColor: '#007AFF'},
-  actionLabel: {fontSize: 15, color: '#000'},
+  actionRowActive: { borderColor: '#007AFF' },
+  actionLabel: { fontSize: 15, color: '#000' },
   priorityRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -316,7 +338,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: '#F2F2F7',
   },
-  priorityBtnText: {fontSize: 22, color: '#007AFF', fontWeight: '500'},
+  priorityBtnText: { fontSize: 22, color: '#007AFF', fontWeight: '500' },
   priorityValue: {
     flex: 1,
     textAlign: 'center',
@@ -337,12 +359,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 28,
   },
-  saveBtnText: {color: '#fff', fontSize: 16, fontWeight: '700'},
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   deleteBtn: {
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 12,
   },
-  deleteBtnText: {color: '#FF3B30', fontSize: 16},
+  deleteBtnText: { color: '#FF3B30', fontSize: 16 },
 });

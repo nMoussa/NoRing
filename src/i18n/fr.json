@@ -92,6 +92,11 @@
     "silent": "Silencieux",
     "allow": "Autoriser"
   },
+  "a11y": {
+    "decreasePriority": "Diminuer la priorité",
+    "increasePriority": "Augmenter la priorité",
+    "iosOnlyWarning": "Android uniquement — iOS ne supporte que les numéros exacts"
+  },
   "common": {
     "enabled": "Activé",
     "disabled": "Désactivé",

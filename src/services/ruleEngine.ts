@@ -1,5 +1,11 @@
-import type {Rule, EvaluationResult} from '../types/Rule';
-import {toE164, isEmergencyNumber} from './phoneNumber';
+import type { Rule, EvaluationResult } from '../types/Rule';
+import { toE164, isEmergencyNumber } from './phoneNumber';
+
+export function extractBlockedE164Numbers(rules: Rule[]): string[] {
+  return rules
+    .filter(r => r.enabled && r.matchType === 'exact' && r.action !== 'allow')
+    .map(r => r.patternNormalized);
+}
 
 // Specificity score: exact beats prefix when priority is equal
 const SPECIFICITY: Record<Rule['matchType'], number> = {
@@ -31,7 +37,7 @@ export function evaluate(
   rawNumber: string | null | undefined,
   rules: Rule[],
 ): EvaluationResult {
-  const defaultResult: EvaluationResult = {action: 'allow', match: null};
+  const defaultResult: EvaluationResult = { action: 'allow', match: null };
 
   // Unknown/private number — allow by default
   if (!rawNumber || rawNumber.trim() === '') {
@@ -55,7 +61,7 @@ export function evaluate(
 
   for (const rule of sorted) {
     if (matchesRule(rule, e164)) {
-      return {action: rule.action, match: {rule, action: rule.action}};
+      return { action: rule.action, match: { rule, action: rule.action } };
     }
   }
 
@@ -65,8 +71,8 @@ export function evaluate(
 // Returns pairs of rules that overlap and conflict (different actions, same priority)
 export function detectConflicts(
   rules: Rule[],
-): Array<{a: Rule; b: Rule; reason: string}> {
-  const conflicts: Array<{a: Rule; b: Rule; reason: string}> = [];
+): Array<{ a: Rule; b: Rule; reason: string }> {
+  const conflicts: Array<{ a: Rule; b: Rule; reason: string }> = [];
   const enabled = rules.filter(r => r.enabled);
 
   for (let i = 0; i < enabled.length; i++) {

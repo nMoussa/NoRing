@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import type {Rule} from '../types/Rule';
+import type { Rule } from '../types/Rule';
 import ActionBadge from './ActionBadge';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface Props {
   rule: Rule;
@@ -16,9 +17,9 @@ interface Props {
   onPress: () => void;
 }
 
-export default function RuleCard({rule, onToggle, onPress}: Props) {
-  const showIosWarning =
-    Platform.OS === 'ios' && rule.matchType === 'prefix';
+export default function RuleCard({ rule, onToggle, onPress }: Props) {
+  const s = useTranslation();
+  const showIosWarning = Platform.OS === 'ios' && rule.matchType === 'prefix';
 
   const toggleLabel = rule.enabled
     ? `Disable rule for ${rule.patternRaw}`
@@ -29,9 +30,12 @@ export default function RuleCard({rule, onToggle, onPress}: Props) {
       style={styles.card}
       onPress={onPress}
       activeOpacity={0.7}
-      accessibilityLabel={`Rule: ${rule.patternRaw}, action: ${rule.action}, ${rule.enabled ? 'enabled' : 'disabled'}`}
+      accessibilityLabel={`Rule: ${rule.patternRaw}, action: ${rule.action}, ${
+        rule.enabled ? 'enabled' : 'disabled'
+      }`}
       accessibilityRole="button"
-      accessibilityHint="Double tap to edit this rule">
+      accessibilityHint="Double tap to edit this rule"
+    >
       <View style={styles.row}>
         <View style={styles.info}>
           <Text style={[styles.pattern, !rule.enabled && styles.dimmed]}>
@@ -39,8 +43,12 @@ export default function RuleCard({rule, onToggle, onPress}: Props) {
           </Text>
           <Text style={styles.normalized}>{rule.patternNormalized}</Text>
           {showIosWarning && (
-            <Text style={styles.iosWarning} accessibilityLiveRegion="none">
-              Android only (iOS: exact numbers only)
+            <Text
+              style={styles.iosWarning}
+              accessibilityLiveRegion="none"
+              accessibilityLabel={s.a11y.iosOnlyWarning}
+            >
+              {s.a11y.iosOnlyWarning}
             </Text>
           )}
         </View>
@@ -50,7 +58,7 @@ export default function RuleCard({rule, onToggle, onPress}: Props) {
             value={rule.enabled}
             onValueChange={onToggle}
             style={styles.toggle}
-            trackColor={{true: '#34C759'}}
+            trackColor={{ true: '#34C759' }}
             accessibilityLabel={toggleLabel}
             accessibilityRole="switch"
           />
@@ -68,7 +76,7 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     padding: 14,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
@@ -78,16 +86,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  info: {flex: 1, marginRight: 12},
-  pattern: {fontSize: 16, fontWeight: '600', color: '#000'},
+  info: { flex: 1, marginRight: 12 },
+  pattern: { fontSize: 16, fontWeight: '600', color: '#000' },
   normalized: {
     fontSize: 12,
     color: '#888',
     fontFamily: 'Menlo',
     marginTop: 2,
   },
-  iosWarning: {fontSize: 11, color: '#FF9500', marginTop: 3},
-  right: {alignItems: 'flex-end', gap: 8},
-  toggle: {marginTop: 4},
-  dimmed: {opacity: 0.4},
+  iosWarning: { fontSize: 11, color: '#FF9500', marginTop: 3 },
+  right: { alignItems: 'flex-end', gap: 8 },
+  toggle: { marginTop: 4 },
+  dimmed: { opacity: 0.4 },
 });

@@ -1,6 +1,5 @@
-import React, {useCallback, useEffect} from 'react';
+import React, { useCallback } from 'react';
 import {
-  AppState,
   FlatList,
   Platform,
   SafeAreaView,
@@ -9,23 +8,19 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import type {StackScreenProps} from '@react-navigation/stack';
-import {useFocusEffect} from '@react-navigation/native';
-import type {RootStackParamList} from '../navigation/RootNavigator';
-import {useRulesStore} from '../store/rulesStore';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { useFocusEffect } from '@react-navigation/native';
+import type { RootStackParamList } from '../navigation/RootNavigator';
+import { useRulesStore } from '../store/rulesStore';
 import RuleCard from '../components/RuleCard';
 import StatusBanner from '../components/StatusBanner';
-import {
-  getAndroidRoleStatus,
-  getIOSExtensionStatus,
-  openIOSSettings,
-} from '../services/nativeBridge';
-import {savePlatformStatus} from '../services/storage';
-import {useTranslation} from '../i18n/useTranslation';
+import { openIOSSettings } from '../services/nativeBridge';
+import { useTranslation } from '../i18n/useTranslation';
+import { usePlatformStatusSync } from '../hooks/usePlatformStatusSync';
 
 type Props = StackScreenProps<RootStackParamList, 'Home'>;
 
-export default function HomeScreen({navigation}: Props) {
+export default function HomeScreen({ navigation }: Props) {
   const s = useTranslation();
   const {
     rules,
@@ -43,20 +38,7 @@ export default function HomeScreen({navigation}: Props) {
     }, [loadFromStorage, refreshPlatformStatus]),
   );
 
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', async state => {
-      if (state !== 'active') return;
-      if (Platform.OS === 'android') {
-        const status = await getAndroidRoleStatus();
-        savePlatformStatus({androidRoleGranted: status === 'granted'});
-      } else {
-        const status = await getIOSExtensionStatus();
-        savePlatformStatus({iosExtensionEnabled: status === 'enabled'});
-      }
-      refreshPlatformStatus();
-    });
-    return () => sub.remove();
-  }, [refreshPlatformStatus]);
+  usePlatformStatusSync();
 
   const showAndroidBanner =
     Platform.OS === 'android' && !platformStatus.androidRoleGranted;
@@ -80,14 +62,16 @@ export default function HomeScreen({navigation}: Props) {
             style={styles.headerBtn}
             onPress={() => navigation.navigate('Simulator')}
             accessibilityLabel={s.home.menuSimulator}
-            accessibilityRole="button">
+            accessibilityRole="button"
+          >
             <Text style={styles.headerBtnText}>{s.home.menuSimulator}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerBtn}
             onPress={() => navigation.navigate('Diagnostics')}
             accessibilityLabel={s.home.menuDiagnostics}
-            accessibilityRole="button">
+            accessibilityRole="button"
+          >
             <Text style={styles.headerBtnText}>⚙</Text>
           </TouchableOpacity>
         </View>
@@ -112,7 +96,8 @@ export default function HomeScreen({navigation}: Props) {
         <View
           style={styles.conflictBanner}
           accessibilityLiveRegion="polite"
-          accessibilityLabel={conflictMessage}>
+          accessibilityLabel={conflictMessage}
+        >
           <Text style={styles.conflictText}>⚠ {conflictMessage}</Text>
         </View>
       )}
@@ -121,11 +106,13 @@ export default function HomeScreen({navigation}: Props) {
       <FlatList
         data={rules}
         keyExtractor={r => r.id}
-        renderItem={({item}) => (
+        renderItem={({ item }) => (
           <RuleCard
             rule={item}
             onToggle={() => toggleRule(item.id)}
-            onPress={() => navigation.navigate('RuleEditor', {ruleId: item.id})}
+            onPress={() =>
+              navigation.navigate('RuleEditor', { ruleId: item.id })
+            }
           />
         )}
         contentContainerStyle={
@@ -144,7 +131,8 @@ export default function HomeScreen({navigation}: Props) {
         style={styles.fab}
         onPress={() => navigation.navigate('RuleEditor', {})}
         accessibilityLabel={s.home.addRule}
-        accessibilityRole="button">
+        accessibilityRole="button"
+      >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -152,7 +140,7 @@ export default function HomeScreen({navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: {flex: 1, backgroundColor: '#F2F2F7'},
+  safe: { flex: 1, backgroundColor: '#F2F2F7' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -163,15 +151,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#C6C6C8',
   },
-  title: {fontSize: 22, fontWeight: '700', color: '#000'},
-  headerActions: {flexDirection: 'row', gap: 8},
+  title: { fontSize: 22, fontWeight: '700', color: '#000' },
+  headerActions: { flexDirection: 'row', gap: 8 },
   headerBtn: {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     backgroundColor: '#F2F2F7',
   },
-  headerBtnText: {color: '#007AFF', fontSize: 14, fontWeight: '500'},
+  headerBtnText: { color: '#007AFF', fontSize: 14, fontWeight: '500' },
   conflictBanner: {
     backgroundColor: '#FFF3E0',
     paddingHorizontal: 16,
@@ -179,17 +167,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#FFB74D',
   },
-  conflictText: {fontSize: 13, color: '#8A5000', fontWeight: '500'},
-  listContent: {paddingVertical: 12},
-  emptyContent: {flex: 1, justifyContent: 'center'},
-  empty: {alignItems: 'center', paddingBottom: 60},
+  conflictText: { fontSize: 13, color: '#8A5000', fontWeight: '500' },
+  listContent: { paddingVertical: 12 },
+  emptyContent: { flex: 1, justifyContent: 'center' },
+  empty: { alignItems: 'center', paddingBottom: 60 },
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: '#3C3C43',
     marginBottom: 8,
   },
-  emptyHint: {fontSize: 15, color: '#8E8E93'},
+  emptyHint: { fontSize: 15, color: '#8E8E93' },
   fab: {
     position: 'absolute',
     bottom: 32,
@@ -201,10 +189,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#007AFF',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 6,
   },
-  fabText: {fontSize: 28, color: '#fff', lineHeight: 32},
+  fabText: { fontSize: 28, color: '#fff', lineHeight: 32 },
 });

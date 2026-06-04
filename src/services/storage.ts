@@ -1,10 +1,12 @@
-import {createMMKV} from 'react-native-mmkv';
-import type {Rule} from '../types/Rule';
+import { createMMKV } from 'react-native-mmkv';
+import type { Rule } from '../types/Rule';
+import {
+  MMKV_ID,
+  RULES_KEY,
+  PLATFORM_STATUS_KEY,
+} from '../constants/storageKeys';
 
-const storage = createMMKV({id: 'noring-storage'});
-
-const RULES_KEY = 'rules';
-const PLATFORM_STATUS_KEY = 'platformStatus';
+const storage = createMMKV({ id: MMKV_ID });
 
 export interface PlatformStatus {
   androidRoleGranted: boolean;
@@ -34,7 +36,11 @@ export function loadRules(): Rule[] {
 
 export function saveRules(rules: Rule[]): void {
   storage.set(RULES_KEY, JSON.stringify(rules));
-  triggerPlatformSync(rules);
+  try {
+    triggerPlatformSync(rules);
+  } catch {
+    // Sync errors must never propagate to callers — log in DiagnosticsScreen instead
+  }
 }
 
 export function loadPlatformStatus(): PlatformStatus {
@@ -43,7 +49,10 @@ export function loadPlatformStatus(): PlatformStatus {
     return DEFAULT_STATUS;
   }
   try {
-    return {...DEFAULT_STATUS, ...(JSON.parse(json) as Partial<PlatformStatus>)};
+    return {
+      ...DEFAULT_STATUS,
+      ...(JSON.parse(json) as Partial<PlatformStatus>),
+    };
   } catch {
     return DEFAULT_STATUS;
   }
@@ -51,7 +60,7 @@ export function loadPlatformStatus(): PlatformStatus {
 
 export function savePlatformStatus(status: Partial<PlatformStatus>): void {
   const current = loadPlatformStatus();
-  storage.set(PLATFORM_STATUS_KEY, JSON.stringify({...current, ...status}));
+  storage.set(PLATFORM_STATUS_KEY, JSON.stringify({ ...current, ...status }));
 }
 
 // Called after every rule write. Native bridges override this on each platform.

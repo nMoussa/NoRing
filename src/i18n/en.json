@@ -92,6 +92,11 @@
     "silent": "Silent",
     "allow": "Allow"
   },
+  "a11y": {
+    "decreasePriority": "Decrease priority",
+    "increasePriority": "Increase priority",
+    "iosOnlyWarning": "Android only — iOS supports exact numbers only"
+  },
   "common": {
     "enabled": "Enabled",
     "disabled": "Disabled",
