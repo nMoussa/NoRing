@@ -15,7 +15,9 @@ class NoRingCallScreeningService : CallScreeningService() {
 
         val response = if (match != null) {
             Log.d(TAG, "Rule matched: ${match.ruleId}, action: ${match.action}")
-            RuleStorage.writeLastBlockedTimestamp(applicationContext)
+            if (match.action == "block_voicemail" || match.action == "reject") {
+                RuleStorage.writeLastBlockedTimestamp(applicationContext)
+            }
             buildResponse(match.action)
         } else {
             Log.d(TAG, "No rule matched — allowing call")
@@ -53,6 +55,7 @@ class NoRingCallScreeningService : CallScreeningService() {
         .setDisallowCall(false)
         .setRejectCall(false)
         .setSilenceCall(false)
+        .setSkipNotification(false)
         .build()
 
     companion object {

@@ -26,11 +26,11 @@ object RuleStorage {
             val rules = mutableListOf<StoredRule>()
             for (i in 0 until arr.length()) {
                 val obj: JSONObject = arr.getJSONObject(i)
-                if (!obj.optBoolean("enabled", false)) continue
+                // Load all rules regardless of enabled state; RuleEngine filters
                 rules.add(
                     StoredRule(
                         id = obj.getString("id"),
-                        enabled = obj.getBoolean("enabled"),
+                        enabled = obj.optBoolean("enabled", false),
                         matchType = obj.getString("matchType"),
                         patternNormalized = obj.getString("patternNormalized"),
                         action = obj.getString("action"),
