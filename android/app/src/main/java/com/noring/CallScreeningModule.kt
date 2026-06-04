@@ -22,8 +22,9 @@ class CallScreeningModule(private val reactContext: ReactApplicationContext) :
 
     private val activityEventListener: ActivityEventListener =
         object : BaseActivityEventListener() {
+            // RN 0.73+ signature: Activity is non-nullable
             override fun onActivityResult(
-                activity: Activity?,
+                activity: Activity,
                 requestCode: Int,
                 resultCode: Int,
                 data: Intent?,
@@ -57,7 +58,7 @@ class CallScreeningModule(private val reactContext: ReactApplicationContext) :
     @ReactMethod
     @RequiresApi(Build.VERSION_CODES.Q)
     fun requestRole(promise: Promise) {
-        val activity = currentActivity
+        val activity = reactContext.currentActivity
         if (activity == null) {
             promise.resolve(false)
             return
@@ -75,6 +76,7 @@ class CallScreeningModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun getLastBlockedCallTimestamp(promise: Promise) {
+        MMKV.initialize(reactContext)
         val mmkv = MMKV.mmkvWithID("noring-storage")
         val ts = mmkv.decodeLong("lastBlockedCallTimestamp", -1L)
         if (ts == -1L) {

@@ -1,6 +1,6 @@
 import {create} from 'zustand';
 import {v4 as uuidv4} from 'uuid';
-import type {Rule, RuleAction, MatchType, Country} from '../types/Rule';
+import type {Rule} from '../types/Rule';
 import {normalizePrefixPattern} from '../services/phoneNumber';
 import {loadRules, saveRules, loadPlatformStatus, PlatformStatus} from '../services/storage';
 import {detectConflicts} from '../services/ruleEngine';

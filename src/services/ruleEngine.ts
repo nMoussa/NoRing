@@ -1,4 +1,4 @@
-import type {Rule, RuleAction, EvaluationResult} from '../types/Rule';
+import type {Rule, EvaluationResult} from '../types/Rule';
 import {toE164, isEmergencyNumber} from './phoneNumber';
 
 // Specificity score: exact beats prefix when priority is equal

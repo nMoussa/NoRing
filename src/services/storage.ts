@@ -1,7 +1,7 @@
-import {MMKV} from 'react-native-mmkv';
+import {createMMKV} from 'react-native-mmkv';
 import type {Rule} from '../types/Rule';
 
-const storage = new MMKV({id: 'noring-storage'});
+const storage = createMMKV({id: 'noring-storage'});
 
 const RULES_KEY = 'rules';
 const PLATFORM_STATUS_KEY = 'platformStatus';

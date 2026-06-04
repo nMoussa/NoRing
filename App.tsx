@@ -1,5 +1,6 @@
 import 'react-native-gesture-handler';
 import React, {useEffect} from 'react';
+import {StyleSheet} from 'react-native';
 import {StatusBar} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
@@ -26,10 +27,14 @@ function AppInner() {
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{flex: 1}}>
+    <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <AppInner />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {flex: 1},
+});
