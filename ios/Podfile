@@ -32,3 +32,10 @@ target 'NoRing' do
     )
   end
 end
+
+# The CallDirectoryExtension uses only system frameworks (CallKit, Foundation)
+# and has no CocoaPods dependencies. Declaring the target prevents CocoaPods
+# from overriding its build settings during post_install.
+target 'CallDirectoryExtension' do
+  # No pods required — extension uses UserDefaults + CallKit only
+end
