@@ -11,7 +11,10 @@ export default function StatusBanner({message, onPress}: Props) {
     <TouchableOpacity
       style={styles.banner}
       onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}>
+      activeOpacity={onPress ? 0.7 : 1}
+      accessibilityLabel={message}
+      accessibilityRole={onPress ? 'button' : 'text'}
+      accessibilityHint={onPress ? 'Double tap to resolve this issue' : undefined}>
       <Text style={styles.text}>⚠ {message}</Text>
     </TouchableOpacity>
   );
@@ -23,9 +26,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  text: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  text: {color: '#fff', fontSize: 13, fontWeight: '500'},
 });

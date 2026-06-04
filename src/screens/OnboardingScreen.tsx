@@ -19,29 +19,26 @@ import {
   type RoleStatus,
   type ExtensionStatus,
 } from '../services/nativeBridge';
+import {useTranslation} from '../i18n/useTranslation';
 
 type Props = StackScreenProps<RootStackParamList, 'Onboarding'>;
-
 type Step = 'idle' | 'requesting' | 'waitingSettings' | 'done';
 
 export default function OnboardingScreen({navigation}: Props) {
+  const s = useTranslation();
   const [step, setStep] = useState<Step>('idle');
   const [androidStatus, setAndroidStatus] = useState<RoleStatus>('denied');
   const [iosStatus, setIosStatus] = useState<ExtensionStatus>('unknown');
 
   const checkStatus = useCallback(async () => {
     if (Platform.OS === 'android') {
-      const s = await getAndroidRoleStatus();
-      setAndroidStatus(s);
-      if (s === 'granted') {
-        setStep('done');
-      }
+      const status = await getAndroidRoleStatus();
+      setAndroidStatus(status);
+      if (status === 'granted') setStep('done');
     } else {
-      const s = await getIOSExtensionStatus();
-      setIosStatus(s);
-      if (s === 'enabled') {
-        setStep('done');
-      }
+      const status = await getIOSExtensionStatus();
+      setIosStatus(status);
+      if (status === 'enabled') setStep('done');
     }
   }, []);
 
@@ -49,12 +46,9 @@ export default function OnboardingScreen({navigation}: Props) {
     checkStatus();
   }, [checkStatus]);
 
-  // Re-check when app returns to foreground (user may have toggled iOS setting)
   useEffect(() => {
     const sub = AppState.addEventListener('change', state => {
-      if (state === 'active') {
-        checkStatus();
-      }
+      if (state === 'active') checkStatus();
     });
     return () => sub.remove();
   }, [checkStatus]);
@@ -62,21 +56,13 @@ export default function OnboardingScreen({navigation}: Props) {
   const handleAndroidEnable = async () => {
     setStep('requesting');
     const granted = await requestAndroidRole();
-    if (granted) {
-      setStep('done');
-    } else {
-      setStep('idle');
-    }
+    setStep(granted ? 'done' : 'idle');
     await checkStatus();
   };
 
   const handleIOSOpen = async () => {
     setStep('waitingSettings');
     await openIOSSettings();
-  };
-
-  const handleContinue = () => {
-    navigation.replace('Home');
   };
 
   const isPermitted =
@@ -87,49 +73,50 @@ export default function OnboardingScreen({navigation}: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        <Text style={styles.title}>NoRing</Text>
-        <Text style={styles.subtitle}>
-          Block unwanted calls with custom rules
+        <Text style={styles.title} accessibilityRole="header">
+          {s.onboarding.title}
         </Text>
+        <Text style={styles.subtitle}>{s.onboarding.subtitle}</Text>
 
         <View style={styles.card}>
           {Platform.OS === 'android' ? (
             <>
-              <Text style={styles.heading}>Set as Call Screener</Text>
-              <Text style={styles.body}>
-                NoRing needs to be your default call screener to filter calls in
-                real time. Tap Enable and select NoRing in the next screen.
-              </Text>
+              <Text style={styles.heading}>{s.onboarding.android.heading}</Text>
+              <Text style={styles.body}>{s.onboarding.android.body}</Text>
               {!isPermitted && (
                 <TouchableOpacity
                   style={styles.button}
                   onPress={handleAndroidEnable}
-                  disabled={step === 'requesting'}>
+                  disabled={step === 'requesting'}
+                  accessibilityLabel={s.onboarding.android.button}
+                  accessibilityRole="button"
+                  accessibilityState={{disabled: step === 'requesting'}}>
                   {step === 'requesting' ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.buttonText}>Enable</Text>
+                    <Text style={styles.buttonText}>
+                      {s.onboarding.android.button}
+                    </Text>
                   )}
                 </TouchableOpacity>
               )}
             </>
           ) : (
             <>
-              <Text style={styles.heading}>Enable Call Blocking</Text>
-              <Text style={styles.body}>
-                Open iOS Settings and turn on NoRing under Phone → Call
-                Blocking &amp; Identification.
-              </Text>
+              <Text style={styles.heading}>{s.onboarding.ios.heading}</Text>
+              <Text style={styles.body}>{s.onboarding.ios.body}</Text>
               {step === 'waitingSettings' && !isPermitted ? (
-                <Text style={styles.pending}>
-                  Waiting for you to enable NoRing in Settings…
-                </Text>
+                <Text style={styles.pending}>{s.onboarding.ios.pending}</Text>
               ) : (
                 !isPermitted && (
                   <TouchableOpacity
                     style={styles.button}
-                    onPress={handleIOSOpen}>
-                    <Text style={styles.buttonText}>Open Settings</Text>
+                    onPress={handleIOSOpen}
+                    accessibilityLabel={s.onboarding.ios.button}
+                    accessibilityRole="button">
+                    <Text style={styles.buttonText}>
+                      {s.onboarding.ios.button}
+                    </Text>
                   </TouchableOpacity>
                 )
               )}
@@ -137,10 +124,11 @@ export default function OnboardingScreen({navigation}: Props) {
           )}
 
           {isPermitted && (
-            <View style={styles.successBox}>
-              <Text style={styles.successText}>
-                ✓ You're all set! NoRing is active.
-              </Text>
+            <View
+              style={styles.successBox}
+              accessibilityLiveRegion="polite"
+              accessibilityLabel={s.onboarding.granted}>
+              <Text style={styles.successText}>✓ {s.onboarding.granted}</Text>
             </View>
           )}
         </View>
@@ -148,16 +136,20 @@ export default function OnboardingScreen({navigation}: Props) {
         {isPermitted && (
           <TouchableOpacity
             style={[styles.button, styles.continueButton]}
-            onPress={handleContinue}>
-            <Text style={styles.buttonText}>Go to My Rules</Text>
+            onPress={() => navigation.replace('Home')}
+            accessibilityLabel={s.onboarding.continue}
+            accessibilityRole="button">
+            <Text style={styles.buttonText}>{s.onboarding.continue}</Text>
           </TouchableOpacity>
         )}
 
         {!isPermitted && (
           <TouchableOpacity
             style={styles.skipLink}
-            onPress={handleContinue}>
-            <Text style={styles.skipText}>Skip for now</Text>
+            onPress={() => navigation.replace('Home')}
+            accessibilityLabel={s.onboarding.skip}
+            accessibilityRole="button">
+            <Text style={styles.skipText}>{s.onboarding.skip}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -188,12 +180,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 24,
   },
-  heading: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 10,
-  },
+  heading: {fontSize: 18, fontWeight: '700', color: '#000', marginBottom: 10},
   body: {fontSize: 15, color: '#444', lineHeight: 22, marginBottom: 20},
   button: {
     backgroundColor: '#007AFF',

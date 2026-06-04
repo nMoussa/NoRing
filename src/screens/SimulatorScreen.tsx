@@ -14,27 +14,23 @@ import {evaluate} from '../services/ruleEngine';
 import {toE164} from '../services/phoneNumber';
 import ActionBadge from '../components/ActionBadge';
 import type {RuleAction} from '../types/Rule';
+import {useTranslation} from '../i18n/useTranslation';
 
 export default function SimulatorScreen() {
+  const s = useTranslation();
   const {rules} = useRulesStore();
   const [input, setInput] = useState('');
   const [tested, setTested] = useState(false);
 
   const result = tested ? evaluate(input, rules) : null;
-
   const e164 = input.trim() ? toE164(input) : null;
 
-  // On iOS, only exact-match blocking works; prefix rules are Android-only
   const iosEffectiveAction = (): RuleAction => {
     if (!result?.match) return 'allow';
-    if (result.match.rule.matchType === 'exact') return result.action;
-    return 'allow';
+    return result.match.rule.matchType === 'exact' ? result.action : 'allow';
   };
 
-  const handleTest = () => {
-    setTested(true);
-  };
-
+  const handleTest = () => setTested(true);
   const handleClear = () => {
     setInput('');
     setTested(false);
@@ -46,9 +42,7 @@ export default function SimulatorScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.container}>
-          <Text style={styles.instruction}>
-            Enter a phone number to see which rule would apply.
-          </Text>
+          <Text style={styles.instruction}>{s.simulator.instruction}</Text>
 
           <View style={styles.inputRow}>
             <TextInput
@@ -58,68 +52,83 @@ export default function SimulatorScreen() {
                 setInput(v);
                 setTested(false);
               }}
-              placeholder="e.g. 03 12 34 56 78"
+              placeholder={s.simulator.placeholder}
               keyboardType="phone-pad"
               returnKeyType="done"
               onSubmitEditing={handleTest}
+              accessibilityLabel={s.simulator.title}
+              accessibilityHint={s.simulator.placeholder}
             />
             {input.length > 0 && (
-              <TouchableOpacity style={styles.clearBtn} onPress={handleClear}>
+              <TouchableOpacity
+                style={styles.clearBtn}
+                onPress={handleClear}
+                accessibilityLabel="Clear input"
+                accessibilityRole="button">
                 <Text style={styles.clearBtnText}>✕</Text>
               </TouchableOpacity>
             )}
           </View>
 
           {e164 && (
-            <Text style={styles.e164}>E.164: {e164}</Text>
+            <Text
+              style={styles.e164}
+              accessibilityLabel={`E.164 format: ${e164}`}>
+              E.164: {e164}
+            </Text>
           )}
 
           <TouchableOpacity
             style={[styles.testBtn, !input.trim() && styles.testBtnDisabled]}
             onPress={handleTest}
-            disabled={!input.trim()}>
-            <Text style={styles.testBtnText}>Test</Text>
+            disabled={!input.trim()}
+            accessibilityLabel={s.simulator.test}
+            accessibilityRole="button"
+            accessibilityState={{disabled: !input.trim()}}>
+            <Text style={styles.testBtnText}>{s.simulator.test}</Text>
           </TouchableOpacity>
 
           {tested && result && (
-            <View style={styles.resultCard}>
-              <Text style={styles.resultTitle}>Result</Text>
+            <View
+              style={styles.resultCard}
+              accessibilityLiveRegion="polite">
+              <Text style={styles.resultTitle}>{s.simulator.resultTitle}</Text>
 
               {result.match ? (
                 <>
                   <View style={styles.resultRow}>
-                    <Text style={styles.resultLabel}>Matched rule</Text>
+                    <Text style={styles.resultLabel}>
+                      {s.simulator.matchedRule}
+                    </Text>
                     <Text style={styles.resultValue}>
                       {result.match.rule.patternRaw}
                     </Text>
                   </View>
                   <View style={styles.resultRow}>
-                    <Text style={styles.resultLabel}>Android action</Text>
+                    <Text style={styles.resultLabel}>{s.simulator.action}</Text>
                     <ActionBadge action={result.action} />
                   </View>
                   <View style={styles.resultRow}>
-                    <Text style={styles.resultLabel}>iOS outcome</Text>
+                    <Text style={styles.resultLabel}>
+                      {s.simulator.iosOutcome}
+                    </Text>
                     <ActionBadge action={iosEffectiveAction()} />
                   </View>
                   {result.match.rule.matchType === 'prefix' && (
                     <Text style={styles.iosNote}>
-                      ⚠ This is a prefix rule — iOS allows the call (exact numbers only).
+                      ⚠ {s.simulator.iosPrefixNote}
                     </Text>
                   )}
                 </>
               ) : (
-                <Text style={styles.noMatch}>
-                  No rule matches — call would be allowed on both platforms.
-                </Text>
+                <Text style={styles.noMatch}>{s.simulator.noMatch}</Text>
               )}
             </View>
           )}
 
           {tested && !result && (
             <View style={styles.resultCard}>
-              <Text style={styles.noMatch}>
-                Enter a valid French number to simulate.
-              </Text>
+              <Text style={styles.noMatch}>{s.simulator.invalidNumber}</Text>
             </View>
           )}
         </View>
@@ -142,11 +151,7 @@ const styles = StyleSheet.create({
     borderColor: '#C6C6C8',
     paddingRight: 8,
   },
-  input: {
-    flex: 1,
-    padding: 14,
-    fontSize: 16,
-  },
+  input: {flex: 1, padding: 14, fontSize: 16},
   clearBtn: {padding: 8},
   clearBtnText: {color: '#8E8E93', fontSize: 16},
   e164: {
@@ -172,7 +177,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
     gap: 12,
   },
-  resultTitle: {fontSize: 16, fontWeight: '700', color: '#000', marginBottom: 4},
+  resultTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 4,
+  },
   resultRow: {
     flexDirection: 'row',
     alignItems: 'center',

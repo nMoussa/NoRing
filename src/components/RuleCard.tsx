@@ -1,5 +1,12 @@
 import React from 'react';
-import {Platform, StyleSheet, Switch, Text, TouchableOpacity, View} from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import type {Rule} from '../types/Rule';
 import ActionBadge from './ActionBadge';
 
@@ -13,8 +20,18 @@ export default function RuleCard({rule, onToggle, onPress}: Props) {
   const showIosWarning =
     Platform.OS === 'ios' && rule.matchType === 'prefix';
 
+  const toggleLabel = rule.enabled
+    ? `Disable rule for ${rule.patternRaw}`
+    : `Enable rule for ${rule.patternRaw}`;
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityLabel={`Rule: ${rule.patternRaw}, action: ${rule.action}, ${rule.enabled ? 'enabled' : 'disabled'}`}
+      accessibilityRole="button"
+      accessibilityHint="Double tap to edit this rule">
       <View style={styles.row}>
         <View style={styles.info}>
           <Text style={[styles.pattern, !rule.enabled && styles.dimmed]}>
@@ -22,7 +39,9 @@ export default function RuleCard({rule, onToggle, onPress}: Props) {
           </Text>
           <Text style={styles.normalized}>{rule.patternNormalized}</Text>
           {showIosWarning && (
-            <Text style={styles.iosWarning}>Android only (iOS: exact numbers only)</Text>
+            <Text style={styles.iosWarning} accessibilityLiveRegion="none">
+              Android only (iOS: exact numbers only)
+            </Text>
           )}
         </View>
         <View style={styles.right}>
@@ -32,6 +51,8 @@ export default function RuleCard({rule, onToggle, onPress}: Props) {
             onValueChange={onToggle}
             style={styles.toggle}
             trackColor={{true: '#34C759'}}
+            accessibilityLabel={toggleLabel}
+            accessibilityRole="switch"
           />
         </View>
       </View>
@@ -57,34 +78,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  info: {
-    flex: 1,
-    marginRight: 12,
-  },
-  pattern: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-  },
+  info: {flex: 1, marginRight: 12},
+  pattern: {fontSize: 16, fontWeight: '600', color: '#000'},
   normalized: {
     fontSize: 12,
     color: '#888',
     fontFamily: 'Menlo',
     marginTop: 2,
   },
-  iosWarning: {
-    fontSize: 11,
-    color: '#FF9500',
-    marginTop: 3,
-  },
-  right: {
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  toggle: {
-    marginTop: 4,
-  },
-  dimmed: {
-    opacity: 0.4,
-  },
+  iosWarning: {fontSize: 11, color: '#FF9500', marginTop: 3},
+  right: {alignItems: 'flex-end', gap: 8},
+  toggle: {marginTop: 4},
+  dimmed: {opacity: 0.4},
 });

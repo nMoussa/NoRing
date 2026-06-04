@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,17 +17,12 @@ import {useRulesStore} from '../store/rulesStore';
 import type {MatchType, RuleAction} from '../types/Rule';
 import NumberPreview from '../components/NumberPreview';
 import ActionBadge from '../components/ActionBadge';
+import {useTranslation} from '../i18n/useTranslation';
 
 type Props = StackScreenProps<RootStackParamList, 'RuleEditor'>;
 
-const ACTIONS: {value: RuleAction; label: string}[] = [
-  {value: 'block_voicemail', label: 'Send to voicemail'},
-  {value: 'reject', label: 'Reject call'},
-  {value: 'silent', label: 'Silence ring'},
-  {value: 'allow', label: 'Always allow'},
-];
-
 export default function RuleEditorScreen({route, navigation}: Props) {
+  const s = useTranslation();
   const {ruleId} = route.params ?? {};
   const {rules, addRule, updateRule, deleteRule} = useRulesStore();
   const existing = ruleId ? rules.find(r => r.id === ruleId) : undefined;
@@ -39,16 +34,25 @@ export default function RuleEditorScreen({route, navigation}: Props) {
   const [action, setAction] = useState<RuleAction>(
     existing?.action ?? 'block_voicemail',
   );
+  const [priority, setPriority] = useState(existing?.priority ?? 100);
+
+  const actions: {value: RuleAction; label: string}[] = [
+    {value: 'block_voicemail', label: s.ruleEditor.actionBlockVoicemail},
+    {value: 'reject',          label: s.ruleEditor.actionReject},
+    {value: 'silent',          label: s.ruleEditor.actionSilent},
+    {value: 'allow',           label: s.ruleEditor.actionAllow},
+  ];
 
   const showIosWarning = Platform.OS === 'ios' && matchType === 'prefix';
 
   const handleSave = () => {
     if (!pattern.trim()) {
-      Alert.alert('Required', 'Please enter a number pattern.');
+      Alert.alert(s.ruleEditor.required, s.ruleEditor.requiredMessage);
       return;
     }
     if (existing) {
-      updateRule(existing.id, {patternRaw: pattern, matchType, action});
+      updateRule(existing.id, {patternRaw: pattern, matchType, action, priority});
+      navigation.goBack();
     } else {
       const result = addRule({
         enabled: true,
@@ -56,33 +60,34 @@ export default function RuleEditorScreen({route, navigation}: Props) {
         matchType,
         patternRaw: pattern,
         action,
-        priority: 100,
+        priority,
         scope: 'incoming' as any,
       });
       if (!result) {
-        Alert.alert(
-          'Invalid Pattern',
-          'Could not recognise this as a valid French number or prefix. Try formats like "03", "+333", or "+33312345678".',
-        );
+        Alert.alert(s.ruleEditor.required, s.ruleEditor.invalidPattern);
         return;
       }
+      navigation.goBack();
     }
-    navigation.goBack();
   };
 
   const handleDelete = () => {
     if (!existing) return;
-    Alert.alert('Delete Rule', 'Are you sure you want to delete this rule?', [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          deleteRule(existing.id);
-          navigation.goBack();
+    Alert.alert(
+      s.ruleEditor.deleteConfirmTitle,
+      s.ruleEditor.deleteConfirmMessage,
+      [
+        {text: s.ruleEditor.cancel, style: 'cancel'},
+        {
+          text: s.ruleEditor.delete,
+          style: 'destructive',
+          onPress: () => {
+            deleteRule(existing.id);
+            navigation.goBack();
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   return (
@@ -91,28 +96,37 @@ export default function RuleEditorScreen({route, navigation}: Props) {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content}>
-          {/* Country (locked to FR) */}
-          <Text style={styles.sectionLabel}>Country</Text>
-          <View style={styles.lockedField}>
+
+          {/* Country — locked */}
+          <Text style={styles.sectionLabel}>{s.ruleEditor.country}</Text>
+          <View
+            style={styles.lockedField}
+            accessibilityLabel={`${s.ruleEditor.country}: France`}>
             <Text style={styles.lockedText}>🇫🇷 France</Text>
           </View>
 
           {/* Pattern input */}
-          <Text style={styles.sectionLabel}>Number pattern</Text>
+          <Text style={styles.sectionLabel}>{s.ruleEditor.pattern}</Text>
           <TextInput
             style={styles.input}
             value={pattern}
             onChangeText={setPattern}
-            placeholder="e.g. 03 or +33312345678"
+            placeholder={s.ruleEditor.patternPlaceholder}
             keyboardType="phone-pad"
             autoFocus={!existing}
             returnKeyType="done"
+            accessibilityLabel={s.ruleEditor.pattern}
+            accessibilityHint={s.ruleEditor.patternPlaceholder}
           />
           <NumberPreview raw={pattern} country="FR" matchType={matchType} />
 
           {/* Match type */}
-          <Text style={[styles.sectionLabel, styles.mt]}>Match type</Text>
-          <View style={styles.segmented}>
+          <Text style={[styles.sectionLabel, styles.mt]}>
+            {s.ruleEditor.matchType}
+          </Text>
+          <View
+            style={styles.segmented}
+            accessibilityRole="tablist">
             {(['prefix', 'exact'] as MatchType[]).map(t => (
               <TouchableOpacity
                 key={t}
@@ -120,49 +134,100 @@ export default function RuleEditorScreen({route, navigation}: Props) {
                   styles.segment,
                   matchType === t && styles.segmentActive,
                 ]}
-                onPress={() => setMatchType(t)}>
+                onPress={() => setMatchType(t)}
+                accessibilityLabel={
+                  t === 'prefix'
+                    ? s.ruleEditor.matchPrefix
+                    : s.ruleEditor.matchExact
+                }
+                accessibilityRole="tab"
+                accessibilityState={{selected: matchType === t}}>
                 <Text
                   style={[
                     styles.segmentText,
                     matchType === t && styles.segmentTextActive,
                   ]}>
-                  {t === 'prefix' ? 'Prefix' : 'Exact number'}
+                  {t === 'prefix'
+                    ? s.ruleEditor.matchPrefix
+                    : s.ruleEditor.matchExact}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
           {showIosWarning && (
-            <View style={styles.iosWarningBox}>
+            <View
+              style={styles.iosWarningBox}
+              accessibilityLiveRegion="polite">
               <Text style={styles.iosWarningText}>
-                ⚠ iOS only supports exact numbers. This prefix rule will only be active on Android.
+                ⚠ {s.ruleEditor.iosPrefixWarning}
               </Text>
             </View>
           )}
 
           {/* Action */}
-          <Text style={[styles.sectionLabel, styles.mt]}>Action</Text>
-          {ACTIONS.map(a => (
+          <Text style={[styles.sectionLabel, styles.mt]}>
+            {s.ruleEditor.action}
+          </Text>
+          {actions.map(a => (
             <TouchableOpacity
               key={a.value}
               style={[
                 styles.actionRow,
                 action === a.value && styles.actionRowActive,
               ]}
-              onPress={() => setAction(a.value)}>
+              onPress={() => setAction(a.value)}
+              accessibilityLabel={a.label}
+              accessibilityRole="radio"
+              accessibilityState={{selected: action === a.value}}>
               <Text style={styles.actionLabel}>{a.label}</Text>
               {action === a.value && <ActionBadge action={a.value} />}
             </TouchableOpacity>
           ))}
 
-          {/* Save / Delete */}
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-            <Text style={styles.saveBtnText}>Save</Text>
+          {/* Priority */}
+          <Text style={[styles.sectionLabel, styles.mt]}>
+            {s.ruleEditor.priority}
+          </Text>
+          <View style={styles.priorityRow}>
+            <TouchableOpacity
+              style={styles.priorityBtn}
+              onPress={() => setPriority(p => Math.max(1, p - 10))}
+              accessibilityLabel="Decrease priority"
+              accessibilityRole="button">
+              <Text style={styles.priorityBtnText}>−</Text>
+            </TouchableOpacity>
+            <Text
+              style={styles.priorityValue}
+              accessibilityLabel={`Priority: ${priority}`}>
+              {priority}
+            </Text>
+            <TouchableOpacity
+              style={styles.priorityBtn}
+              onPress={() => setPriority(p => Math.min(999, p + 10))}
+              accessibilityLabel="Increase priority"
+              accessibilityRole="button">
+              <Text style={styles.priorityBtnText}>+</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.priorityHint}>{s.ruleEditor.priorityHint}</Text>
+
+          {/* Save */}
+          <TouchableOpacity
+            style={styles.saveBtn}
+            onPress={handleSave}
+            accessibilityLabel={s.ruleEditor.save}
+            accessibilityRole="button">
+            <Text style={styles.saveBtnText}>{s.ruleEditor.save}</Text>
           </TouchableOpacity>
 
           {existing && (
-            <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-              <Text style={styles.deleteBtnText}>Delete Rule</Text>
+            <TouchableOpacity
+              style={styles.deleteBtn}
+              onPress={handleDelete}
+              accessibilityLabel={s.ruleEditor.delete}
+              accessibilityRole="button">
+              <Text style={styles.deleteBtnText}>{s.ruleEditor.delete}</Text>
             </TouchableOpacity>
           )}
         </ScrollView>
@@ -238,6 +303,34 @@ const styles = StyleSheet.create({
   },
   actionRowActive: {borderColor: '#007AFF'},
   actionLabel: {fontSize: 15, color: '#000'},
+  priorityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#C6C6C8',
+    overflow: 'hidden',
+  },
+  priorityBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: '#F2F2F7',
+  },
+  priorityBtnText: {fontSize: 22, color: '#007AFF', fontWeight: '500'},
+  priorityValue: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+  },
+  priorityHint: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 6,
+    marginLeft: 4,
+  },
   saveBtn: {
     backgroundColor: '#007AFF',
     borderRadius: 12,
