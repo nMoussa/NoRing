@@ -11,13 +11,19 @@ jest.mock('react-native-mmkv', () => {
   const _store: Record<string, string> = {};
   const _instance = {
     getString: (key: string) => _store[key],
-    set: (key: string, value: string) => { _store[key] = value; },
+    set: (key: string, value: string) => {
+      _store[key] = value;
+    },
   };
   return {
     createMMKV: () => _instance,
     // Expose helpers for test setup/teardown
-    __clear: () => { Object.keys(_store).forEach(k => delete _store[k]); },
-    __inject: (key: string, value: string) => { _store[key] = value; },
+    __clear: () => {
+      Object.keys(_store).forEach(k => delete _store[k]);
+    },
+    __inject: (key: string, value: string) => {
+      _store[key] = value;
+    },
   };
 });
 
@@ -28,7 +34,7 @@ import {
   savePlatformStatus,
   setPlatformSyncCallback,
 } from '../src/services/storage';
-import type {Rule} from '../src/types/Rule';
+import type { Rule } from '../src/types/Rule';
 
 function makeRule(overrides: Partial<Rule> = {}): Rule {
   return {
@@ -74,8 +80,8 @@ describe('loadRules / saveRules', () => {
 
   test('round-trips multiple rules preserving order', () => {
     const rules = [
-      makeRule({id: 'a', priority: 200}),
-      makeRule({id: 'b', priority: 100}),
+      makeRule({ id: 'a', priority: 200 }),
+      makeRule({ id: 'b', priority: 100 }),
     ];
     saveRules(rules);
     const loaded = loadRules();
@@ -83,7 +89,7 @@ describe('loadRules / saveRules', () => {
   });
 
   test('round-trips disabled rule correctly', () => {
-    const rule = makeRule({enabled: false});
+    const rule = makeRule({ enabled: false });
     saveRules([rule]);
     expect(loadRules()[0].enabled).toBe(false);
   });
@@ -104,28 +110,30 @@ describe('loadPlatformStatus / savePlatformStatus', () => {
   });
 
   test('persists androidRoleGranted', () => {
-    savePlatformStatus({androidRoleGranted: true});
+    savePlatformStatus({ androidRoleGranted: true });
     expect(loadPlatformStatus().androidRoleGranted).toBe(true);
   });
 
   test('persists iosExtensionEnabled', () => {
-    savePlatformStatus({iosExtensionEnabled: true});
+    savePlatformStatus({ iosExtensionEnabled: true });
     expect(loadPlatformStatus().iosExtensionEnabled).toBe(true);
   });
 
   test('persists iosLastReloadTime', () => {
-    savePlatformStatus({iosLastReloadTime: '2026-06-03T12:00:00.000Z'});
-    expect(loadPlatformStatus().iosLastReloadTime).toBe('2026-06-03T12:00:00.000Z');
+    savePlatformStatus({ iosLastReloadTime: '2026-06-03T12:00:00.000Z' });
+    expect(loadPlatformStatus().iosLastReloadTime).toBe(
+      '2026-06-03T12:00:00.000Z',
+    );
   });
 
   test('persists iosLastReloadError', () => {
-    savePlatformStatus({iosLastReloadError: 'Extension timed out'});
+    savePlatformStatus({ iosLastReloadError: 'Extension timed out' });
     expect(loadPlatformStatus().iosLastReloadError).toBe('Extension timed out');
   });
 
   test('partial update merges with existing values', () => {
-    savePlatformStatus({androidRoleGranted: true, iosExtensionEnabled: true});
-    savePlatformStatus({androidRoleGranted: false});
+    savePlatformStatus({ androidRoleGranted: true, iosExtensionEnabled: true });
+    savePlatformStatus({ androidRoleGranted: false });
     const status = loadPlatformStatus();
     expect(status.androidRoleGranted).toBe(false);
     expect(status.iosExtensionEnabled).toBe(true); // preserved
@@ -157,5 +165,46 @@ describe('triggerPlatformSync callback', () => {
     saveRules([makeRule()]);
     expect(old).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  test('saveRules does not propagate a throwing callback', () => {
+    setPlatformSyncCallback(() => {
+      throw new Error('boom');
+    });
+    expect(() => saveRules([makeRule()])).not.toThrow();
+  });
+});
+
+describe('loadRules — forward-compatibility', () => {
+  test('gracefully ignores unknown extra fields in stored JSON', () => {
+    mmkv().__inject(
+      'rules',
+      JSON.stringify([
+        {
+          id: 'x',
+          enabled: true,
+          country: 'FR',
+          matchType: 'prefix',
+          patternRaw: '03',
+          patternNormalized: '+333',
+          action: 'block_voicemail',
+          priority: 100,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          futureField: 'ignore-me',
+        },
+      ]),
+    );
+    const loaded = loadRules();
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].id).toBe('x');
+  });
+});
+
+describe('savePlatformStatus — null clearing', () => {
+  test('setting iosLastReloadError to null clears the error', () => {
+    savePlatformStatus({ iosLastReloadError: 'previous error' });
+    expect(loadPlatformStatus().iosLastReloadError).toBe('previous error');
+    savePlatformStatus({ iosLastReloadError: null });
+    expect(loadPlatformStatus().iosLastReloadError).toBeNull();
   });
 });

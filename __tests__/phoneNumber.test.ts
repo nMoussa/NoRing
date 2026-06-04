@@ -1,4 +1,8 @@
-import {toE164, normalizePrefixPattern, isEmergencyNumber} from '../src/services/phoneNumber';
+import {
+  toE164,
+  normalizePrefixPattern,
+  isEmergencyNumber,
+} from '../src/services/phoneNumber';
 
 describe('toE164 — French number normalization', () => {
   test('national format with spaces', () => {
@@ -65,6 +69,14 @@ describe('normalizePrefixPattern — French prefix expansion', () => {
 
   test('empty string returns null', () => {
     expect(normalizePrefixPattern('')).toBeNull();
+  });
+
+  test('"07" mobile prefix → "+337"', () => {
+    expect(normalizePrefixPattern('07')).toBe('+337');
+  });
+
+  test('"04" Southeast France prefix → "+334"', () => {
+    expect(normalizePrefixPattern('04')).toBe('+334');
   });
 });
 

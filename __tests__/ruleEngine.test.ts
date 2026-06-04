@@ -1,5 +1,5 @@
-import {evaluate, detectConflicts} from '../src/services/ruleEngine';
-import type {Rule} from '../src/types/Rule';
+import { evaluate, detectConflicts } from '../src/services/ruleEngine';
+import type { Rule } from '../src/types/Rule';
 
 function makeRule(overrides: Partial<Rule>): Rule {
   return {
@@ -59,7 +59,7 @@ describe('evaluate — basic matching', () => {
   });
 
   test('disabled rule is ignored', () => {
-    const disabled = {...frenchCallerPrefix, enabled: false};
+    const disabled = { ...frenchCallerPrefix, enabled: false };
     expect(evaluate('03 12 34 56 78', [disabled]).action).toBe('allow');
   });
 
@@ -78,7 +78,9 @@ describe('evaluate — basic matching', () => {
       action: 'silent',
       priority: 50,
     });
-    expect(evaluate('03 99 88 77 66', [lowPriority, highPriority]).action).toBe('reject');
+    expect(evaluate('03 99 88 77 66', [lowPriority, highPriority]).action).toBe(
+      'reject',
+    );
   });
 
   test('unknown/private number (empty string) → allow', () => {
@@ -121,17 +123,17 @@ describe('evaluate — emergency numbers always pass through', () => {
 
 describe('evaluate — all actions', () => {
   test('reject action', () => {
-    const r = makeRule({action: 'reject'});
+    const r = makeRule({ action: 'reject' });
     expect(evaluate('0312345678', [r]).action).toBe('reject');
   });
 
   test('silent action', () => {
-    const r = makeRule({action: 'silent'});
+    const r = makeRule({ action: 'silent' });
     expect(evaluate('0312345678', [r]).action).toBe('silent');
   });
 
   test('allow action (explicit allowlist)', () => {
-    const r = makeRule({action: 'allow'});
+    const r = makeRule({ action: 'allow' });
     expect(evaluate('0312345678', [r]).action).toBe('allow');
   });
 });
@@ -158,20 +160,89 @@ describe('detectConflicts', () => {
   });
 
   test('no conflict when priorities differ', () => {
-    const high = makeRule({id: 'h', action: 'allow', priority: 200});
-    const low = makeRule({id: 'l', action: 'block_voicemail', priority: 50});
+    const high = makeRule({ id: 'h', action: 'allow', priority: 200 });
+    const low = makeRule({ id: 'l', action: 'block_voicemail', priority: 50 });
     expect(detectConflicts([high, low])).toHaveLength(0);
   });
 
   test('no conflict when actions are the same', () => {
-    const a = makeRule({id: 'a', action: 'reject'});
-    const b = makeRule({id: 'b', action: 'reject'});
+    const a = makeRule({ id: 'a', action: 'reject' });
+    const b = makeRule({ id: 'b', action: 'reject' });
     expect(detectConflicts([a, b])).toHaveLength(0);
   });
 
   test('disabled rules are excluded from conflict detection', () => {
-    const active = makeRule({id: 'active', action: 'block_voicemail'});
-    const disabled = makeRule({id: 'disabled', action: 'allow', enabled: false});
+    const active = makeRule({ id: 'active', action: 'block_voicemail' });
+    const disabled = makeRule({
+      id: 'disabled',
+      action: 'allow',
+      enabled: false,
+    });
     expect(detectConflicts([active, disabled])).toHaveLength(0);
+  });
+
+  test('three-way overlap produces all conflicting pairs at same priority', () => {
+    // broad(+33,reject) vs narrow(+333,allow) → conflict (different actions, +333 starts with +33)
+    // narrow(+333,allow) vs exact(+33312345678,reject) → conflict (different actions, exact starts with +333)
+    // broad(+33,reject) vs exact(+33312345678,reject) → NO conflict (same action)
+    const broad = makeRule({
+      id: 'broad',
+      matchType: 'prefix',
+      patternNormalized: '+33',
+      action: 'reject',
+      priority: 100,
+    });
+    const narrow = makeRule({
+      id: 'narrow',
+      matchType: 'prefix',
+      patternNormalized: '+333',
+      action: 'allow',
+      priority: 100,
+    });
+    const exact = makeRule({
+      id: 'exact',
+      matchType: 'exact',
+      patternNormalized: '+33312345678',
+      action: 'reject',
+      priority: 100,
+    });
+    const pairs = detectConflicts([broad, narrow, exact]);
+    expect(pairs.length).toBe(2);
+  });
+
+  test('non-overlapping prefixes at same priority produce no conflict', () => {
+    const a = makeRule({
+      id: 'a',
+      matchType: 'prefix',
+      patternNormalized: '+331',
+      action: 'reject',
+    });
+    const b = makeRule({
+      id: 'b',
+      matchType: 'prefix',
+      patternNormalized: '+332',
+      action: 'allow',
+    });
+    expect(detectConflicts([a, b])).toHaveLength(0);
+  });
+});
+
+describe('evaluate — edge priority values', () => {
+  test('rule with priority 0 still matches', () => {
+    const r = makeRule({
+      priority: 0,
+      patternNormalized: '+333',
+      matchType: 'prefix',
+    });
+    expect(evaluate('0312345678', [r]).action).toBe('block_voicemail');
+  });
+
+  test('rule with negative priority still matches (no hard floor)', () => {
+    const r = makeRule({
+      priority: -1,
+      patternNormalized: '+333',
+      matchType: 'prefix',
+    });
+    expect(evaluate('0312345678', [r]).action).toBe('block_voicemail');
   });
 });
