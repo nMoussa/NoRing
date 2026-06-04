@@ -21,12 +21,20 @@ import {
   openIOSSettings,
 } from '../services/nativeBridge';
 import {savePlatformStatus} from '../services/storage';
+import {useTranslation} from '../i18n/useTranslation';
 
 type Props = StackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({navigation}: Props) {
-  const {rules, platformStatus, loadFromStorage, toggleRule, refreshPlatformStatus} =
-    useRulesStore();
+  const s = useTranslation();
+  const {
+    rules,
+    conflicts,
+    platformStatus,
+    loadFromStorage,
+    toggleRule,
+    refreshPlatformStatus,
+  } = useRulesStore();
 
   useFocusEffect(
     useCallback(() => {
@@ -35,16 +43,15 @@ export default function HomeScreen({navigation}: Props) {
     }, [loadFromStorage, refreshPlatformStatus]),
   );
 
-  // Re-check platform status when app comes to foreground
   useEffect(() => {
     const sub = AppState.addEventListener('change', async state => {
       if (state !== 'active') return;
       if (Platform.OS === 'android') {
-        const s = await getAndroidRoleStatus();
-        savePlatformStatus({androidRoleGranted: s === 'granted'});
+        const status = await getAndroidRoleStatus();
+        savePlatformStatus({androidRoleGranted: status === 'granted'});
       } else {
-        const s = await getIOSExtensionStatus();
-        savePlatformStatus({iosExtensionEnabled: s === 'enabled'});
+        const status = await getIOSExtensionStatus();
+        savePlatformStatus({iosExtensionEnabled: status === 'enabled'});
       }
       refreshPlatformStatus();
     });
@@ -56,37 +63,58 @@ export default function HomeScreen({navigation}: Props) {
   const showIosBanner =
     Platform.OS === 'ios' && !platformStatus.iosExtensionEnabled;
 
+  const conflictMessage =
+    conflicts.length === 1
+      ? s.home.conflictsWarning.replace('{n}', '1')
+      : s.home.conflictsWarningPlural.replace('{n}', String(conflicts.length));
+
   return (
     <SafeAreaView style={styles.safe}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>My Rules</Text>
+        <Text style={styles.title} accessibilityRole="header">
+          {s.home.title}
+        </Text>
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.headerBtn}
-            onPress={() => navigation.navigate('Simulator')}>
-            <Text style={styles.headerBtnText}>Simulator</Text>
+            onPress={() => navigation.navigate('Simulator')}
+            accessibilityLabel={s.home.menuSimulator}
+            accessibilityRole="button">
+            <Text style={styles.headerBtnText}>{s.home.menuSimulator}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerBtn}
-            onPress={() => navigation.navigate('Diagnostics')}>
+            onPress={() => navigation.navigate('Diagnostics')}
+            accessibilityLabel={s.home.menuDiagnostics}
+            accessibilityRole="button">
             <Text style={styles.headerBtnText}>⚙</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Permission banner */}
+      {/* Permission banners */}
       {showAndroidBanner && (
         <StatusBanner
-          message="NoRing is not active — tap to enable as call screener"
+          message={s.home.bannerAndroidDenied}
           onPress={() => navigation.navigate('Onboarding')}
         />
       )}
       {showIosBanner && (
         <StatusBanner
-          message="Extension not enabled — tap to open Settings"
+          message={s.home.bannerIosDisabled}
           onPress={() => openIOSSettings()}
         />
+      )}
+
+      {/* Conflict warning */}
+      {conflicts.length > 0 && (
+        <View
+          style={styles.conflictBanner}
+          accessibilityLiveRegion="polite"
+          accessibilityLabel={conflictMessage}>
+          <Text style={styles.conflictText}>⚠ {conflictMessage}</Text>
+        </View>
       )}
 
       {/* Rule list */}
@@ -97,9 +125,7 @@ export default function HomeScreen({navigation}: Props) {
           <RuleCard
             rule={item}
             onToggle={() => toggleRule(item.id)}
-            onPress={() =>
-              navigation.navigate('RuleEditor', {ruleId: item.id})
-            }
+            onPress={() => navigation.navigate('RuleEditor', {ruleId: item.id})}
           />
         )}
         contentContainerStyle={
@@ -107,10 +133,8 @@ export default function HomeScreen({navigation}: Props) {
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No rules yet</Text>
-            <Text style={styles.emptyHint}>
-              Tap + to add your first rule
-            </Text>
+            <Text style={styles.emptyTitle}>{s.home.noRules}</Text>
+            <Text style={styles.emptyHint}>{s.home.noRulesHint}</Text>
           </View>
         }
       />
@@ -118,7 +142,9 @@ export default function HomeScreen({navigation}: Props) {
       {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate('RuleEditor', {})}>
+        onPress={() => navigation.navigate('RuleEditor', {})}
+        accessibilityLabel={s.home.addRule}
+        accessibilityRole="button">
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -146,10 +172,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F7',
   },
   headerBtnText: {color: '#007AFF', fontSize: 14, fontWeight: '500'},
+  conflictBanner: {
+    backgroundColor: '#FFF3E0',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#FFB74D',
+  },
+  conflictText: {fontSize: 13, color: '#8A5000', fontWeight: '500'},
   listContent: {paddingVertical: 12},
   emptyContent: {flex: 1, justifyContent: 'center'},
   empty: {alignItems: 'center', paddingBottom: 60},
-  emptyTitle: {fontSize: 20, fontWeight: '600', color: '#3C3C43', marginBottom: 8},
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#3C3C43',
+    marginBottom: 8,
+  },
   emptyHint: {fontSize: 15, color: '#8E8E93'},
   fab: {
     position: 'absolute',

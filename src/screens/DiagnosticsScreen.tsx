@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -20,10 +20,13 @@ import {
   type RoleStatus,
 } from '../services/nativeBridge';
 import {loadPlatformStatus, loadRules} from '../services/storage';
+import {useTranslation} from '../i18n/useTranslation';
 
 function Row({label, value}: {label: string; value: string}) {
   return (
-    <View style={styles.row}>
+    <View
+      style={styles.row}
+      accessibilityLabel={`${label}: ${value}`}>
       <Text style={styles.rowLabel}>{label}</Text>
       <Text style={styles.rowValue}>{value}</Text>
     </View>
@@ -31,12 +34,14 @@ function Row({label, value}: {label: string; value: string}) {
 }
 
 export default function DiagnosticsScreen() {
+  const s = useTranslation();
   const [androidRole, setAndroidRole] = useState<RoleStatus>('unavailable');
   const [lastBlocked, setLastBlocked] = useState<number | null>(null);
   const [iosStatus, setIosStatus] = useState<ExtensionStatus>('unknown');
   const [reloading, setReloading] = useState(false);
   const [reloadError, setReloadError] = useState<string | null>(null);
   const [lastReload, setLastReload] = useState<string | null>(null);
+  const [entryCount, setEntryCount] = useState(0);
 
   const refresh = useCallback(async () => {
     if (Platform.OS === 'android') {
@@ -53,6 +58,12 @@ export default function DiagnosticsScreen() {
       setLastReload(ps.iosLastReloadTime);
       setReloadError(ps.iosLastReloadError);
     }
+    // Count exact blocked rules synced to extension
+    const rules = loadRules();
+    const count = rules.filter(
+      r => r.enabled && r.matchType === 'exact' && r.action !== 'allow',
+    ).length;
+    setEntryCount(count);
   }, []);
 
   useFocusEffect(
@@ -66,69 +77,99 @@ export default function DiagnosticsScreen() {
     setReloadError(null);
     try {
       const rules = loadRules();
-      const exactNumbers = rules
+      const numbers = rules
         .filter(r => r.enabled && r.matchType === 'exact' && r.action !== 'allow')
         .map(r => r.patternNormalized);
-      await syncIOSNumbers(exactNumbers);
+      await syncIOSNumbers(numbers);
       await refresh();
     } catch (e: any) {
-      setReloadError(e?.message ?? 'Unknown error');
+      setReloadError(e?.message ?? s.common.error);
     } finally {
       setReloading(false);
     }
   };
 
   const formatTs = (ts: number | null | string): string => {
-    if (ts == null) return 'Never';
+    if (ts == null) return s.diagnostics.never;
     const ms = typeof ts === 'string' ? parseFloat(ts) * 1000 : ts;
     return new Date(ms).toLocaleString();
   };
+
+  const roleLabel =
+    androidRole === 'granted'
+      ? `✓ ${s.common.granted}`
+      : `✗ ${androidRole}`;
+
+  const extLabel =
+    iosStatus === 'enabled'
+      ? `✓ ${s.common.enabled_status}`
+      : `✗ ${iosStatus}`;
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
         {Platform.OS === 'android' ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Android</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">
+              {s.diagnostics.android}
+            </Text>
             <View style={styles.card}>
+              <Row label={s.diagnostics.roleStatus} value={roleLabel} />
               <Row
-                label="Call screener role"
-                value={androidRole === 'granted' ? '✓ Granted' : '✗ ' + androidRole}
+                label={s.diagnostics.lastBlocked}
+                value={formatTs(lastBlocked)}
               />
               <Row
-                label="Last blocked call"
-                value={formatTs(lastBlocked)}
+                label={s.diagnostics.extensionEntryCount}
+                value={String(entryCount)}
               />
             </View>
           </View>
         ) : (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>iOS</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">
+              {s.diagnostics.ios}
+            </Text>
             <View style={styles.card}>
+              <Row label={s.diagnostics.extensionStatus} value={extLabel} />
               <Row
-                label="Extension status"
-                value={iosStatus === 'enabled' ? '✓ Enabled' : '✗ ' + iosStatus}
+                label={s.diagnostics.lastReload}
+                value={lastReload ? formatTs(lastReload) : s.diagnostics.never}
               />
-              <Row label="Last reload" value={lastReload ? formatTs(lastReload) : 'Never'} />
+              <Row
+                label={s.diagnostics.extensionEntryCount}
+                value={String(entryCount)}
+              />
               {reloadError && (
-                <Row label="Reload error" value={reloadError} />
+                <Row label={s.diagnostics.reloadError} value={reloadError} />
               )}
             </View>
+
             {iosStatus !== 'enabled' && (
               <TouchableOpacity
                 style={styles.settingsBtn}
-                onPress={() => openIOSSettings()}>
-                <Text style={styles.settingsBtnText}>Open Settings</Text>
+                onPress={() => openIOSSettings()}
+                accessibilityLabel={s.diagnostics.openSettings}
+                accessibilityRole="button">
+                <Text style={styles.settingsBtnText}>
+                  {s.diagnostics.openSettings}
+                </Text>
               </TouchableOpacity>
             )}
+
             <TouchableOpacity
               style={[styles.reloadBtn, reloading && styles.btnDisabled]}
               onPress={handleForceReload}
-              disabled={reloading}>
+              disabled={reloading}
+              accessibilityLabel={s.diagnostics.forceReload}
+              accessibilityRole="button"
+              accessibilityState={{disabled: reloading}}>
               {reloading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.reloadBtnText}>Force Reload Extension</Text>
+                <Text style={styles.reloadBtnText}>
+                  {s.diagnostics.forceReload}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
@@ -150,11 +191,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 10,
   },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
+  card: {backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden'},
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -164,7 +201,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E5EA',
   },
   rowLabel: {fontSize: 14, color: '#555', flex: 1},
-  rowValue: {fontSize: 14, color: '#000', fontWeight: '500', flex: 1, textAlign: 'right'},
+  rowValue: {
+    fontSize: 14,
+    color: '#000',
+    fontWeight: '500',
+    flex: 1,
+    textAlign: 'right',
+  },
   settingsBtn: {
     backgroundColor: '#F2F2F7',
     borderRadius: 12,

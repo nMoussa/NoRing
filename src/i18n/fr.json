@@ -2,6 +2,7 @@
   "onboarding": {
     "title": "NoRing",
     "subtitle": "Bloquez les appels indésirables avec des règles personnalisées",
+    "skip": "Passer pour l'instant",
     "android": {
       "heading": "Définir comme filtre d'appels",
       "body": "NoRing doit être votre filtre d'appels par défaut pour filtrer les appels en temps réel. Appuyez sur Activer et sélectionnez NoRing dans l'écran suivant.",
@@ -23,7 +24,10 @@
     "bannerAndroidDenied": "NoRing est inactif — appuyez pour activer",
     "bannerIosDisabled": "Extension non activée — appuyez pour ouvrir les réglages",
     "menuSimulator": "Simulateur",
-    "menuDiagnostics": "Diagnostics"
+    "menuDiagnostics": "Diagnostics",
+    "addRule": "Ajouter une règle",
+    "conflictsWarning": "{n} conflit de règle détecté — vérifiez les priorités",
+    "conflictsWarningPlural": "{n} conflits de règles détectés — vérifiez les priorités"
   },
   "ruleEditor": {
     "titleNew": "Nouvelle règle",
@@ -42,18 +46,29 @@
     "iosPrefixWarning": "iOS ne prend en charge que les numéros exacts. Cette règle de préfixe sera uniquement active sur Android.",
     "preview": "Correspond à",
     "previewNone": "Modèle invalide",
+    "priority": "Priorité",
+    "priorityHint": "Le nombre le plus élevé gagne lorsque plusieurs règles correspondent au même appel",
     "save": "Enregistrer",
     "delete": "Supprimer la règle",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "required": "Requis",
+    "requiredMessage": "Veuillez saisir un modèle de numéro.",
+    "invalidPattern": "Impossible de reconnaître un numéro ou préfixe français valide. Essayez des formats comme « 03 », « +333 » ou « +33312345678 ».",
+    "deleteConfirmTitle": "Supprimer la règle",
+    "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer cette règle ?"
   },
   "simulator": {
     "title": "Simulateur de règles",
-    "placeholder": "Entrez un numéro à tester",
+    "instruction": "Entrez un numéro de téléphone pour voir quelle règle s'appliquerait.",
+    "placeholder": "ex. 03 12 34 56 78",
+    "test": "Tester",
     "resultTitle": "Résultat",
-    "noMatch": "Aucune règle — l'appel serait autorisé",
+    "noMatch": "Aucune règle ne correspond — l'appel serait autorisé sur les deux plateformes.",
     "matchedRule": "Règle correspondante",
-    "action": "Action",
-    "iosOutcome": "Résultat iOS"
+    "action": "Action Android",
+    "iosOutcome": "Résultat iOS",
+    "iosPrefixNote": "Règle de préfixe — iOS autorise cet appel (numéros exacts uniquement).",
+    "invalidNumber": "Entrez un numéro français valide pour simuler."
   },
   "diagnostics": {
     "title": "Diagnostics",
@@ -66,8 +81,10 @@
     "lastReload": "Dernier rechargement",
     "reloadError": "Dernière erreur",
     "none": "Aucune",
+    "extensionEntryCount": "Règles synchronisées avec l'extension",
     "forceReload": "Forcer le rechargement",
-    "reloading": "Rechargement…"
+    "reloading": "Rechargement…",
+    "openSettings": "Ouvrir les réglages"
   },
   "actions": {
     "block_voicemail": "Messagerie",
@@ -79,6 +96,9 @@
     "enabled": "Activé",
     "disabled": "Désactivé",
     "unknown": "Inconnu",
-    "error": "Erreur"
+    "error": "Erreur",
+    "granted": "Accordé",
+    "denied": "Refusé",
+    "enabled_status": "Activé"
   }
 }
