@@ -1,0 +1,84 @@
+{
+  "onboarding": {
+    "title": "NoRing",
+    "subtitle": "Block unwanted calls with custom rules",
+    "android": {
+      "heading": "Set as Call Screener",
+      "body": "NoRing needs to be your default call screener to filter calls in real time. Tap Enable and select NoRing in the next screen.",
+      "button": "Enable"
+    },
+    "ios": {
+      "heading": "Enable Call Blocking",
+      "body": "Open iOS Settings and turn on NoRing under Phone → Call Blocking & Identification.",
+      "button": "Open Settings",
+      "pending": "Waiting for you to enable NoRing in Settings…"
+    },
+    "granted": "You're all set! NoRing is active.",
+    "continue": "Go to My Rules"
+  },
+  "home": {
+    "title": "My Rules",
+    "noRules": "No rules yet",
+    "noRulesHint": "Tap + to add your first rule",
+    "bannerAndroidDenied": "NoRing is not active — tap to enable as call screener",
+    "bannerIosDisabled": "Extension not enabled — tap to open Settings",
+    "menuSimulator": "Simulator",
+    "menuDiagnostics": "Diagnostics"
+  },
+  "ruleEditor": {
+    "titleNew": "New Rule",
+    "titleEdit": "Edit Rule",
+    "country": "Country",
+    "pattern": "Number pattern",
+    "patternPlaceholder": "e.g. 03 or +33312345678",
+    "matchType": "Match type",
+    "matchExact": "Exact number",
+    "matchPrefix": "Prefix (starts with)",
+    "action": "Action",
+    "actionBlockVoicemail": "Send to voicemail",
+    "actionReject": "Reject call",
+    "actionSilent": "Silence ring",
+    "actionAllow": "Always allow",
+    "iosPrefixWarning": "iOS only supports exact numbers. This prefix rule will only be active on Android.",
+    "preview": "Matches",
+    "previewNone": "Invalid pattern",
+    "save": "Save",
+    "delete": "Delete Rule",
+    "cancel": "Cancel"
+  },
+  "simulator": {
+    "title": "Rule Simulator",
+    "placeholder": "Enter a phone number to test",
+    "resultTitle": "Result",
+    "noMatch": "No rule matches — call would be allowed",
+    "matchedRule": "Matched rule",
+    "action": "Action",
+    "iosOutcome": "iOS outcome"
+  },
+  "diagnostics": {
+    "title": "Diagnostics",
+    "android": "Android",
+    "ios": "iOS",
+    "roleStatus": "Call screener role",
+    "lastBlocked": "Last blocked call",
+    "never": "Never",
+    "extensionStatus": "Extension status",
+    "lastReload": "Last reload",
+    "reloadError": "Last reload error",
+    "none": "None",
+    "forceReload": "Force Reload Extension",
+    "reloading": "Reloading…"
+  },
+  "actions": {
+    "block_voicemail": "Voicemail",
+    "reject": "Reject",
+    "silent": "Silent",
+    "allow": "Allow"
+  },
+  "common": {
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "unknown": "Unknown",
+    "error": "Error"
+  }
+}
