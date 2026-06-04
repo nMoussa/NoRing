@@ -4,9 +4,13 @@ source 'https://rubygems.org'
 ruby ">= 2.6.10"
 
 # Exclude problematic versions of cocoapods and activesupport that causes build failures.
-gem 'cocoapods', '>= 1.13', '!= 1.15.0', '!= 1.15.1'
+gem 'cocoapods', '>= 1.15.2'
 gem 'activesupport', '>= 6.1.7.5', '!= 7.1.0'
-gem 'xcodeproj', '< 1.26.0'
+# xcodeproj 1.26+ supports Xcode 16 project format (version 70).
+# CFPropertyList 3.0.9 is the last release supporting Ruby 2.6; xcodeproj
+# 1.26+ requires >= 3.0.3 so the constraint is satisfiable on this Ruby.
+gem 'xcodeproj', '>= 1.26.0'
+gem 'CFPropertyList', '3.0.9'
 gem 'concurrent-ruby', '< 1.3.4'
 
 # Ruby 3.4.0 has removed some libraries from the standard library.
