@@ -16,7 +16,7 @@ cd "$REPO_ROOT"
 ARCHIVE_PATH="$REPO_ROOT/build/NoRing.xcarchive"
 
 echo "▶ Installing JS dependencies..."
-npm ci --safe-chain-skip-minimum-package-age
+npm ci
 
 echo "▶ Installing CocoaPods..."
 cd ios && bundle exec pod install && cd ..

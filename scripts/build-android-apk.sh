@@ -16,7 +16,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 echo "▶ Installing JS dependencies..."
-npm ci --safe-chain-skip-minimum-package-age
+npm ci
 
 echo "▶ Building release APK..."
 cd android

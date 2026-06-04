@@ -3,10 +3,16 @@ import {
   isValidPhoneNumber,
   PhoneNumber,
 } from 'libphonenumber-js';
-import type {Country} from '../types/Rule';
+import type { Country } from '../types/Rule';
+
+// E.164 max = 15 digits + leading '+' + reasonable formatting chars
+const MAX_INPUT_LENGTH = 30;
 
 export function toE164(raw: string, country: Country = 'FR'): string | null {
   try {
+    if (raw.length > MAX_INPUT_LENGTH) {
+      return null;
+    }
     const cleaned = raw.trim();
     if (!cleaned) {
       return null;
@@ -33,6 +39,9 @@ export function normalizePrefixPattern(
   raw: string,
   country: Country = 'FR',
 ): string | null {
+  if (raw.length > MAX_INPUT_LENGTH) {
+    return null;
+  }
   const cleaned = raw.trim().replace(/[\s\-().]/g, '');
   if (!cleaned) {
     return null;
@@ -49,7 +58,7 @@ export function normalizePrefixPattern(
   }
 
   // French national prefix: map country code for FR
-  const countryCallingCodes: Record<Country, string> = {FR: '33'};
+  const countryCallingCodes: Record<Country, string> = { FR: '33' };
   const callingCode = countryCallingCodes[country];
 
   if (country === 'FR') {
@@ -65,9 +74,9 @@ export function normalizePrefixPattern(
 // French emergency numbers (E.164 form)
 const FR_EMERGENCY_NUMBERS = new Set([
   '+33112', // 112 — European emergency
-  '+3315',  // 15 — SAMU
-  '+3317',  // 17 — Police
-  '+3318',  // 18 — Fire
+  '+3315', // 15 — SAMU
+  '+3317', // 17 — Police
+  '+3318', // 18 — Fire
 ]);
 
 export function isEmergencyNumber(e164: string): boolean {

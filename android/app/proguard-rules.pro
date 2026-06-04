@@ -17,6 +17,9 @@
 -keep class com.noring.** { *; }
 
 # ── Kotlin ────────────────────────────────────────────────────────────────────
--keep class kotlin.** { *; }
--keep class kotlinx.** { *; }
+# Only keep what Kotlin reflection and coroutines need; do not blanket-keep
+# all Kotlin/kotlinx classes as that defeats obfuscation.
+-keep class kotlin.Metadata { *; }
+-keep class kotlin.jvm.** { *; }
 -dontwarn kotlin.**
+-dontwarn kotlinx.**

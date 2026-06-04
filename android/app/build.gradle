@@ -91,8 +91,11 @@ android {
         applicationId "com.noring"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode (System.getenv('GITHUB_RUN_NUMBER')?.toInteger() ?: 1)
         versionName "1.0.0"
+        // Explicitly disable cleartext HTTP traffic; the placeholder must be
+        // defined here to prevent it evaluating as a literal string in the manifest.
+        manifestPlaceholders = [usesCleartextTraffic: "false"]
     }
     signingConfigs {
         debug {

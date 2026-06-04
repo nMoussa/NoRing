@@ -13,11 +13,13 @@ class CallDirectoryBridge: NSObject {
     ) {
         CallDirectoryManager.syncAndReload(blockedNumbers: blockedNumbers) { error in
             if let error = error {
-                // Save reload error to App Group for Diagnostics screen
+                // Store only error domain+code (not localizedDescription) to avoid
+                // persisting system paths or call data in the shared App Group.
+                let sanitized = "[\((error as NSError).domain)] code \((error as NSError).code)"
                 if let defaults = UserDefaults(suiteName: "group.com.noring.shared") {
-                    defaults.set(error.localizedDescription, forKey: "lastReloadError")
+                    defaults.set(sanitized, forKey: "lastReloadError")
                 }
-                reject("RELOAD_FAILED", error.localizedDescription, error)
+                reject("RELOAD_FAILED", sanitized, error)
             } else {
                 if let defaults = UserDefaults(suiteName: "group.com.noring.shared") {
                     defaults.set(nil, forKey: "lastReloadError")
