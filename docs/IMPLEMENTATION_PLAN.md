@@ -15,8 +15,11 @@ NoRing lets users define phone-number patterns (e.g., "all French numbers starti
 
 ```
 NoRing/
+├── docs/
+│   └── IMPLEMENTATION_PLAN.md            # This document
 ├── src/                                  # React Native TypeScript app
-│   ├── navigation/                       # React Navigation root + stacks
+│   ├── navigation/
+│   │   └── RootNavigator.tsx             # Stack navigator (5 screens)
 │   ├── screens/
 │   │   ├── OnboardingScreen.tsx          # Permission/role setup flow
 │   │   ├── HomeScreen.tsx                # Rule list + platform status banner
@@ -24,30 +27,47 @@ NoRing/
 │   │   ├── SimulatorScreen.tsx           # Type a number → see which rule fires
 │   │   └── DiagnosticsScreen.tsx         # Role status, iOS extension status, last reload
 │   ├── components/
-│   │   ├── RuleCard.tsx
+│   │   ├── RuleCard.tsx                  # Rule list item with toggle + action badge
 │   │   ├── ActionBadge.tsx               # Block / Reject / Silent chip
-│   │   └── NumberPreview.tsx             # Live E.164 preview while typing a pattern
+│   │   ├── NumberPreview.tsx             # Live E.164 preview while typing a pattern
+│   │   └── StatusBanner.tsx              # Amber permission-warning tap-to-fix banner
 │   ├── services/
 │   │   ├── ruleEngine.ts                 # Normalize, match, conflict-detect
 │   │   ├── phoneNumber.ts                # libphonenumber-js wrapper (France focus)
-│   │   └── storage.ts                    # MMKV abstraction (rules + settings)
+│   │   ├── storage.ts                    # MMKV abstraction (rules + settings)
+│   │   ├── nativeBridge.ts               # Typed JS wrappers for Android/iOS native modules
+│   │   └── platformSync.ts               # Wires MMKV write callback to iOS extension reload
 │   ├── store/
-│   │   └── rulesStore.ts                 # Zustand store: rules[], platformStatus
-│   └── types/
-│       └── Rule.ts                       # Shared Rule interface
+│   │   └── rulesStore.ts                 # Zustand store: rules[], platformStatus, conflicts
+│   ├── types/
+│   │   └── Rule.ts                       # Shared Rule interface and action/matchType enums
+│   └── i18n/
+│       ├── en.json                       # English strings
+│       ├── fr.json                       # French strings
+│       └── useTranslation.ts             # Locale hook (reads device locale, returns typed strings)
 ├── android/
 │   └── app/src/main/java/com/noring/
 │       ├── NoRingCallScreeningService.kt # CallScreeningService — real-time screening
-│       ├── RuleEngine.kt                 # Kotlin mirror of ruleEngine.ts
+│       ├── RuleEngine.kt                 # Kotlin mirror of ruleEngine.ts (runs without JS runtime)
 │       ├── RuleStorage.kt                # Reads MMKV rules from native side
-│       └── CallScreeningModule.kt        # RN bridge: role status, request role
+│       ├── CallScreeningModule.kt        # RN bridge: role status, request role, last blocked ts
+│       └── CallScreeningPackage.kt       # ReactPackage registering CallScreeningModule
 ├── ios/
 │   ├── NoRing/
+│   │   ├── AppGroupStorage.swift         # Shared UserDefaults writer/reader (group.com.noring.shared)
 │   │   ├── CallDirectoryManager.swift    # Triggers extension reload, reports status
-│   │   ├── AppGroupStorage.swift         # Writes exact-number list to App Group
-│   │   └── CallDirectoryBridge.m         # RN bridge: reload, check enabled status
-│   └── CallDirectoryExtension/
-│       └── CallDirectoryHandler.swift    # Reads App Group → feeds iOS with block list
+│   │   ├── CallDirectoryBridge.m         # Objective-C RN bridge declarations (RCT_EXTERN_MODULE)
+│   │   └── CallDirectoryBridge.swift     # Swift implementation of the RN bridge methods
+│   ├── CallDirectoryExtension/
+│   │   ├── CallDirectoryHandler.swift    # CXCallDirectoryProvider — reads App Group → blocks numbers
+│   │   ├── CallDirectoryExtension.entitlements
+│   │   └── Info.plist                    # NSExtension keys (merged with generated base by Xcode)
+│   ├── NoRing.entitlements               # App Group capability for main target
+│   └── Podfile                           # CocoaPods: NoRing + empty CallDirectoryExtension target
+├── __tests__/
+│   ├── phoneNumber.test.ts               # 10 French format + emergency tests
+│   ├── ruleEngine.test.ts                # 32 match / priority / conflict tests
+│   └── storage.test.ts                   # 14 CRUD + callback tests
 └── package.json
 ```
 
@@ -296,10 +316,15 @@ Show "Enable call blocking in iOS Settings" card with "Open Settings" button →
 | Package | Purpose |
 |---|---|
 | `react-native-mmkv` | Fast cross-process local storage (readable from Kotlin/Swift natively) |
+| `react-native-nitro-modules` | Peer dependency required by react-native-mmkv v4 (Nitro architecture) |
 | `libphonenumber-js` | French number parsing and normalization |
 | `zustand` | Lightweight state management |
 | `@react-navigation/native` + `@react-navigation/stack` | Screen navigation |
 | `react-native-permissions` | Runtime permission checks |
+| `react-native-gesture-handler` | Required by React Navigation stack |
+| `react-native-screens` | Native screen containers for React Navigation |
+| `react-native-safe-area-context` | Safe area insets |
+| `uuid` | UUID v4 generation for rule IDs |
 | `com.googlecode.libphonenumber` (Gradle) | Kotlin-side normalization inside the screening service |
 
 ---
