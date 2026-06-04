@@ -61,7 +61,6 @@ export default function RuleEditorScreen({route, navigation}: Props) {
         patternRaw: pattern,
         action,
         priority,
-        scope: 'incoming' as any,
       });
       if (!result) {
         Alert.alert(s.ruleEditor.required, s.ruleEditor.invalidPattern);

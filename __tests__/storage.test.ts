@@ -1,17 +1,23 @@
 // Storage tests run in a Jest environment where react-native-mmkv is not
-// available as a native module. We mock the MMKV class so we can test the
+// available as a native module. We mock createMMKV so we can test the
 // serialization, deserialization, and callback logic in isolation.
+//
+// The store and __clear helper are defined INSIDE the jest.mock factory so
+// they are always initialized before any require() call, regardless of Jest's
+// jest.mock hoisting behaviour (which runs the factory before outer const
+// declarations are initialised).
 
 jest.mock('react-native-mmkv', () => {
-  const store: Record<string, string> = {};
+  const _store: Record<string, string> = {};
+  const _instance = {
+    getString: (key: string) => _store[key],
+    set: (key: string, value: string) => { _store[key] = value; },
+  };
   return {
-    MMKV: jest.fn().mockImplementation(() => ({
-      getString: (key: string) => store[key],
-      set: (key: string, value: string) => {
-        store[key] = value;
-      },
-      clearAll: () => Object.keys(store).forEach(k => delete store[k]),
-    })),
+    createMMKV: () => _instance,
+    // Expose helpers for test setup/teardown
+    __clear: () => { Object.keys(_store).forEach(k => delete _store[k]); },
+    __inject: (key: string, value: string) => { _store[key] = value; },
   };
 });
 
@@ -39,10 +45,16 @@ function makeRule(overrides: Partial<Rule> = {}): Rule {
   };
 }
 
+function mmkv() {
+  return jest.requireMock('react-native-mmkv') as {
+    __clear: () => void;
+    __inject: (key: string, value: string) => void;
+  };
+}
+
 // Reset MMKV store between tests
 beforeEach(() => {
-  const {MMKV} = require('react-native-mmkv');
-  MMKV.mock.results[0]?.value?.clearAll?.();
+  mmkv().__clear();
   saveRules([]);
   setPlatformSyncCallback(() => {});
 });
@@ -77,10 +89,7 @@ describe('loadRules / saveRules', () => {
   });
 
   test('returns empty array on malformed JSON', () => {
-    // Inject bad JSON directly via MMKV mock
-    const {MMKV} = require('react-native-mmkv');
-    const instance = MMKV.mock.results[0].value;
-    instance.set('rules', '{{{invalid json');
+    mmkv().__inject('rules', '{{{invalid json');
     expect(loadRules()).toEqual([]);
   });
 });
