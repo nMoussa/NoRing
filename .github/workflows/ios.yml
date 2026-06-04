@@ -24,7 +24,7 @@ jobs:
         uses: ruby/setup-ruby@afeafc3d1ab54a631816aba4c914a0081c12ff2f # v1
         with:
           ruby-version: '3.2'
-          bundler: 'latest'      # overrides BUNDLED WITH 1.17.2 in Gemfile.lock (incompatible with Ruby 3.2)
+          bundler: '2.7.2'      # matches BUNDLED WITH in Gemfile.lock; 1.17.2 crashes on Ruby 3.2 (String#untaint removed)
           bundler-cache: true
 
       - name: Cache node_modules
