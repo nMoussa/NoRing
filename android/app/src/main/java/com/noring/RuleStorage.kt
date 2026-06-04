@@ -1,7 +1,7 @@
 package com.noring
 
 import android.content.Context
-import com.facebook.react.modules.storage.AsyncStorageModule
+import com.tencent.mmkv.MMKV
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -18,10 +18,15 @@ object RuleStorage {
     private const val MMKV_ID = "noring-storage"
     private const val RULES_KEY = "rules"
 
+    private fun mmkv(context: Context): MMKV {
+        // initialize() is idempotent; react-native-mmkv v4 uses the same default path
+        MMKV.initialize(context)
+        return MMKV.mmkvWithID(MMKV_ID)
+    }
+
     fun loadRules(context: Context): List<StoredRule> {
         return try {
-            val mmkv = com.tencent.mmkv.MMKV.mmkvWithID(MMKV_ID)
-            val json = mmkv.decodeString(RULES_KEY) ?: return emptyList()
+            val json = mmkv(context).decodeString(RULES_KEY) ?: return emptyList()
             val arr = JSONArray(json)
             val rules = mutableListOf<StoredRule>()
             for (i in 0 until arr.length()) {
@@ -46,8 +51,7 @@ object RuleStorage {
 
     fun writeLastBlockedTimestamp(context: Context) {
         try {
-            val mmkv = com.tencent.mmkv.MMKV.mmkvWithID(MMKV_ID)
-            mmkv.encode("lastBlockedCallTimestamp", System.currentTimeMillis())
+            mmkv(context).encode("lastBlockedCallTimestamp", System.currentTimeMillis())
         } catch (_: Exception) {}
     }
 }

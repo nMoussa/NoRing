@@ -118,4 +118,10 @@ dependencies {
     }
 
     implementation 'com.googlecode.libphonenumber:libphonenumber:8.13.+'
+    // react-native-mmkv v4 (NitroMmkv) declares this as `implementation`, so it is
+    // not exposed to the app's compile classpath. Declare it explicitly (same version)
+    // to make com.tencent.mmkv.MMKV resolvable in CallScreeningService/RuleStorage.
+    // Do NOT also add com.tencent:mmkv — it contains the same classes and causes
+    // duplicate-class errors at dex merge time.
+    implementation 'io.github.zhongwuzw:mmkv:2.4.0'
 }
