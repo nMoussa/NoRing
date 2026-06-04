@@ -23,8 +23,8 @@ jobs:
       - name: Set up Ruby 3.2 + bundle install
         uses: ruby/setup-ruby@afeafc3d1ab54a631816aba4c914a0081c12ff2f # v1
         with:
-          ruby-version: '3.2'
-          bundler: '2.7.2'      # matches BUNDLED WITH in Gemfile.lock; 1.17.2 crashes on Ruby 3.2 (String#untaint removed)
+          ruby-version: '3.1'    # CFPropertyList 3.0.9 (pinned in Gemfile.lock) requires ruby < 3.2
+          bundler: '2.7.2'      # matches BUNDLED WITH in Gemfile.lock; 1.17.2 crashes on Ruby 3.x (String#untaint removed)
           bundler-cache: true
 
       - name: Cache node_modules
