@@ -1,0 +1,84 @@
+{
+  "onboarding": {
+    "title": "NoRing",
+    "subtitle": "Bloquez les appels indésirables avec des règles personnalisées",
+    "android": {
+      "heading": "Définir comme filtre d'appels",
+      "body": "NoRing doit être votre filtre d'appels par défaut pour filtrer les appels en temps réel. Appuyez sur Activer et sélectionnez NoRing dans l'écran suivant.",
+      "button": "Activer"
+    },
+    "ios": {
+      "heading": "Activer le blocage d'appels",
+      "body": "Ouvrez les Réglages iOS et activez NoRing sous Téléphone → Appels bloqués et identifiés.",
+      "button": "Ouvrir les réglages",
+      "pending": "En attente de l'activation de NoRing dans les Réglages…"
+    },
+    "granted": "Tout est prêt ! NoRing est actif.",
+    "continue": "Voir mes règles"
+  },
+  "home": {
+    "title": "Mes règles",
+    "noRules": "Aucune règle",
+    "noRulesHint": "Appuyez sur + pour ajouter votre première règle",
+    "bannerAndroidDenied": "NoRing est inactif — appuyez pour activer",
+    "bannerIosDisabled": "Extension non activée — appuyez pour ouvrir les réglages",
+    "menuSimulator": "Simulateur",
+    "menuDiagnostics": "Diagnostics"
+  },
+  "ruleEditor": {
+    "titleNew": "Nouvelle règle",
+    "titleEdit": "Modifier la règle",
+    "country": "Pays",
+    "pattern": "Modèle de numéro",
+    "patternPlaceholder": "ex. 03 ou +33312345678",
+    "matchType": "Type de correspondance",
+    "matchExact": "Numéro exact",
+    "matchPrefix": "Préfixe (commence par)",
+    "action": "Action",
+    "actionBlockVoicemail": "Envoyer vers la messagerie",
+    "actionReject": "Rejeter l'appel",
+    "actionSilent": "Mettre en silencieux",
+    "actionAllow": "Toujours autoriser",
+    "iosPrefixWarning": "iOS ne prend en charge que les numéros exacts. Cette règle de préfixe sera uniquement active sur Android.",
+    "preview": "Correspond à",
+    "previewNone": "Modèle invalide",
+    "save": "Enregistrer",
+    "delete": "Supprimer la règle",
+    "cancel": "Annuler"
+  },
+  "simulator": {
+    "title": "Simulateur de règles",
+    "placeholder": "Entrez un numéro à tester",
+    "resultTitle": "Résultat",
+    "noMatch": "Aucune règle — l'appel serait autorisé",
+    "matchedRule": "Règle correspondante",
+    "action": "Action",
+    "iosOutcome": "Résultat iOS"
+  },
+  "diagnostics": {
+    "title": "Diagnostics",
+    "android": "Android",
+    "ios": "iOS",
+    "roleStatus": "Rôle filtre d'appels",
+    "lastBlocked": "Dernier appel bloqué",
+    "never": "Jamais",
+    "extensionStatus": "Statut de l'extension",
+    "lastReload": "Dernier rechargement",
+    "reloadError": "Dernière erreur",
+    "none": "Aucune",
+    "forceReload": "Forcer le rechargement",
+    "reloading": "Rechargement…"
+  },
+  "actions": {
+    "block_voicemail": "Messagerie",
+    "reject": "Rejeter",
+    "silent": "Silencieux",
+    "allow": "Autoriser"
+  },
+  "common": {
+    "enabled": "Activé",
+    "disabled": "Désactivé",
+    "unknown": "Inconnu",
+    "error": "Erreur"
+  }
+}
