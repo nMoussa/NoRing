@@ -49,8 +49,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		004601426B2B494AA13CF509 /* AppGroupStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppGroupStorage.swift; path = CallDirectoryExtension/AppGroupStorage.swift; sourceTree = "<group>"; };
-		032AB60C2D1B424F9A628D5A /* AppGroupStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppGroupStorage.swift; path = CallDirectoryExtension/AppGroupStorage.swift; sourceTree = "<group>"; };
+		004601426B2B494AA13CF509 /* AppGroupStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppGroupStorage.swift; path = NoRing/AppGroupStorage.swift; sourceTree = "<group>"; };
+		032AB60C2D1B424F9A628D5A /* AppGroupStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppGroupStorage.swift; path = NoRing/AppGroupStorage.swift; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* NoRing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoRing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = NoRing/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = NoRing/Info.plist; sourceTree = "<group>"; };
@@ -158,7 +158,6 @@
 			isa = PBXGroup;
 			children = (
 				F462108E1BD4436DB7F334A9 /* CallDirectoryHandler.swift */,
-				032AB60C2D1B424F9A628D5A /* AppGroupStorage.swift */,
 				6CE64E71A3EE43DDBC3D2C01 /* Info.plist */,
 				E63F795233E640E39850FE7E /* CallDirectoryExtension.entitlements */,
 			);
