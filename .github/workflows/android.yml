@@ -8,7 +8,7 @@ on:
 
 jobs:
   android-build:
-    name: Gradle assembleDebug
+    name: Gradle assembleRelease
     runs-on: ubuntu-latest
 
     steps:
@@ -42,11 +42,50 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: ${{ runner.os }}-gradle-
 
-      - name: Install safe-chain
-        run: curl -fsSL https://github.com/AikidoSec/safe-chain/releases/latest/download/install-safe-chain.sh | sh -s -- --ci
+      - name: Install safe-chain v1.5.7 (SHA-verified)
+        run: |
+          curl -fsSL -o /tmp/install-safe-chain.sh \
+            https://github.com/AikidoSec/safe-chain/releases/download/1.5.7/install-safe-chain.sh
+          echo "07ab512fd8795ce41b2275be369aced4c9a93cc7bca9b397951507891a955239  /tmp/install-safe-chain.sh" \
+            | sha256sum --check --status
+          sh /tmp/install-safe-chain.sh --ci
 
       - name: Install JS dependencies
         run: npm ci --safe-chain-skip-minimum-package-age
 
-      - name: Build debug APK
-        run: cd android && ./gradlew assembleDebug --no-daemon
+      # ── Release signing ──────────────────────────────────────────────────────
+      # Decode the base64-encoded keystore from GitHub Secrets and write the
+      # properties file that build.gradle reads.  If secrets are not set (e.g.
+      # on a fork PR), the build falls back to the debug keystore automatically.
+      - name: Configure release signing
+        if: ${{ env.KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          KEYSTORE_KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+          KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/noring-release.keystore
+          cat > android/keystore.properties << EOF
+          storeFile=noring-release.keystore
+          storePassword=$KEYSTORE_STORE_PASSWORD
+          keyAlias=$KEYSTORE_KEY_ALIAS
+          keyPassword=$KEYSTORE_KEY_PASSWORD
+          EOF
+
+      - name: Build APK
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          cd android
+          if [ -f keystore.properties ]; then
+            ./gradlew assembleRelease --no-daemon
+          else
+            echo "No release keystore configured — building debug APK"
+            ./gradlew assembleDebug --no-daemon
+          fi
+
+      - name: Clean up keystore
+        if: always()
+        run: |
+          rm -f android/app/noring-release.keystore android/keystore.properties

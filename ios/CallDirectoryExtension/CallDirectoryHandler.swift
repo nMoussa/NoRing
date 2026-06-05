@@ -1,15 +1,12 @@
 import Foundation
 import CallKit
 
-/// iOS Call Directory App Extension.
-/// This handler runs when the system needs to refresh the blocking/identification list.
-/// It reads blocked numbers from the shared App Group and registers them with iOS.
-///
-/// Prerequisites before this works:
-/// 1. Add a "Call Directory Extension" target in Xcode (File > New > Target > Call Directory Extension)
-/// 2. Enable the App Group "group.com.noring.shared" in both the main app and this extension target
-/// 3. The user must enable the extension in iOS Settings > Phone > Call Blocking & Identification
 class CallDirectoryHandler: CXCallDirectoryProvider {
+
+    // iOS Call Directory has an undocumented upper limit around 10 000 entries.
+    // Enforcing a hard cap prevents the extension from being killed for using
+    // too much memory and guards against corrupted App Group data.
+    private static let maxEntries = 10_000
 
     override func beginRequest(with context: CXCallDirectoryExtensionContext) {
         context.delegate = self
@@ -18,13 +15,24 @@ class CallDirectoryHandler: CXCallDirectoryProvider {
     }
 
     private func addBlockingEntries(context: CXCallDirectoryExtensionContext) {
-        // AppGroupStorage is shared via a framework or duplicated source file.
-        // Numbers must be added in ascending numeric order — AppGroupStorage.loadBlockedNumbers()
-        // returns them pre-sorted.
         let numbers = AppGroupStorage.loadBlockedNumbers()
 
+        // Validate list size before registering anything
+        guard numbers.count <= Self.maxEntries else {
+            if let defaults = UserDefaults(suiteName: "group.com.noring.shared") {
+                defaults.set("Entry count \(numbers.count) exceeds limit \(Self.maxEntries)", forKey: "lastExtensionError")
+            }
+            context.completeRequest()
+            return
+        }
+
         for numberString in numbers {
-            guard let numericValue = Int64(numberString.replacingOccurrences(of: "+", with: "")) else {
+            // Only register strings that look like E.164 phone numbers
+            guard numberString.hasPrefix("+"),
+                  numberString.count >= 2,
+                  numberString.count <= 16,
+                  let numericValue = Int64(numberString.replacingOccurrences(of: "+", with: ""))
+            else {
                 continue
             }
             context.addBlockingEntry(withNextSequentialPhoneNumber: numericValue)
@@ -34,9 +42,10 @@ class CallDirectoryHandler: CXCallDirectoryProvider {
 
 extension CallDirectoryHandler: CXCallDirectoryExtensionContextDelegate {
     func requestFailed(for extensionContext: CXCallDirectoryExtensionContext, withError error: Error) {
-        // Surface failure in diagnostics via App Group flag so the main app can show a warning.
+        // Store only the error domain + code, not localizedDescription, to avoid
+        // persisting any potentially sensitive system path or call data in the App Group.
         if let defaults = UserDefaults(suiteName: "group.com.noring.shared") {
-            defaults.set(error.localizedDescription, forKey: "lastExtensionError")
+            defaults.set("[\((error as NSError).domain)] code \((error as NSError).code)", forKey: "lastExtensionError")
             defaults.set(Date().timeIntervalSince1970, forKey: "lastExtensionErrorTime")
         }
     }

@@ -8,19 +8,36 @@ class NoRingCallScreeningService : CallScreeningService() {
 
     override fun onScreenCall(callDetails: Call.Details) {
         val handle = callDetails.handle?.schemeSpecificPart
-        Log.d(TAG, "Screening call from: $handle")
+
+        // Guard: reject handles that don't look like phone numbers to prevent
+        // any downstream processing of unexpected input from the telecom layer.
+        if (handle != null && !handle.matches(Regex("[0-9+#*]{1,20}"))) {
+            Log.w(TAG, "Unexpected handle format — allowing call")
+            respondToCall(callDetails, allowResponse())
+            return
+        }
+
+        // Never log the actual phone number — it is PII. Debug builds may log
+        // a redacted marker so developers can trace the screening flow.
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, "onScreenCall invoked (handle redacted)")
+        }
 
         val rules = RuleStorage.loadRules(applicationContext)
         val match = RuleEngine.evaluate(handle, rules)
 
         val response = if (match != null) {
-            Log.d(TAG, "Rule matched: ${match.ruleId}, action: ${match.action}")
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "Rule matched: ruleId=${match.ruleId}, action=${match.action}")
+            }
             if (match.action == "block_voicemail" || match.action == "reject") {
                 RuleStorage.writeLastBlockedTimestamp(applicationContext)
             }
             buildResponse(match.action)
         } else {
-            Log.d(TAG, "No rule matched — allowing call")
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "No rule matched — allowing call")
+            }
             allowResponse()
         }
 
