@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   android-build:
@@ -84,6 +85,16 @@ jobs:
             echo "No release keystore configured — building debug APK"
             ./gradlew assembleDebug --no-daemon
           fi
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: noring-${{ github.run_number }}.apk
+          path: |
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Clean up keystore
         if: always()
